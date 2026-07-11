@@ -5,6 +5,7 @@
 import * as THREE from 'three';
 import { createTown, placeBlock, tick, buildingAt, isRoad, timeOfDay } from './sim-core.mjs';
 import { createAgents, syncAgents, tickAgents, whoIsAt, residentInfo, carsInTransit } from './agents.mjs';
+import { createEconomy, tickEconomy, cartsInTransit } from './economy.mjs';
 import { paletteAt, buildingVisual, moverVisual, cameraFrame } from './render-core.mjs';
 import { dragToAnchors } from './input-core.mjs';
 
@@ -37,6 +38,34 @@ const SCALE_PERSON = 0.32;      // person 1x4x1 -> ~1.3 u de alto
 const SCALE_CAR = 0.30;         // car 3x2x1 -> ~0.9 u de ancho, ~0.6 de alto
 const SCALE_TREE = 0.30;        // tree 3x3x1 -> ~0.9 u
 const SCALE_STREETLIGHT = 0.28; // streetlight 1x3x1 -> poste ~0.84 u
+const SCALE_CROP = 0.22;        // crop 1x2x1 -> mata ~0.44 u de alto
+const SCALE_CART = 0.30;        // cart 2x2x1 -> carrito ~0.6 u
+
+const MAX_CROPS = 18;           // matas por granja a farmCap (cota de instancias)
+
+// La casa de la granja ocupa la celda esquina [0,0] del lote 2x2; el CAMPO son
+// las otras 3 celdas (L). Sembramos ahi, con jitter fijo por celda y orden
+// "salpicado" (hash) para que el llenado parcial no crezca fila por fila.
+// Cada slot lleva su celda (cx,cy in {0,1}) y su offset intra-celda (sx,sz in 0..1),
+// de modo que world = (b.x + cx + sx, b.y + cy + sz) mantiene la mata dentro de su celda.
+const FARM_HOUSE_CELL = [0, 0];
+function buildCropSlots() {
+  const fieldCells = [[1, 0], [0, 1], [1, 1]]; // 3 celdas de campo (casa en [0,0])
+  const cols = 3, rows = 2; // 6 por celda -> 18 en total
+  const raw = [];
+  for (const [cx, cy] of fieldCells) {
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+      const jx = (((c * 31 + r * 17 + cx * 7) % 13) / 13 - 0.5) * 0.12;
+      const jz = (((c * 19 + r * 41 + cy * 11) % 11) / 11 - 0.5) * 0.12;
+      const sx = 0.18 + ((c + 0.5) / cols) * 0.64 + jx;
+      const sz = 0.20 + ((r + 0.5) / rows) * 0.60 + jz;
+      raw.push({ cx, cy, sx, sz, ord: (c * 73 + r * 149 + cx * 313 + cy * 617) % 97 });
+    }
+  }
+  raw.sort((a, b) => a.ord - b.ord);
+  return raw;
+}
+const CROP_SLOTS = buildCropSlots();
 
 export function start(opts = {}) {
   const GAME = window.GAME;
@@ -49,6 +78,8 @@ export function start(opts = {}) {
   tick(town, 42.5); // arranque ~08:30 (timeOfDay ~ 0.354)
   const ag = createAgents({ seed: 20260711 });
   syncAgents(ag, town, GAME);
+  const ECON = GAME.ECON;
+  const eco = createEconomy();
 
   // ---- Escena / renderer ---------------------------------------------------
   const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
@@ -97,6 +128,8 @@ export function start(opts = {}) {
   // ---- Grupos ------------------------------------------------------------
   const staticGroup = new THREE.Group(); scene.add(staticGroup); // edificios/caminos/arboles/farolas
   const moverGroup = new THREE.Group(); scene.add(moverGroup);   // gente/autos
+  const cropGroup = new THREE.Group(); scene.add(cropGroup);     // matas de las granjas
+  const cartGroup = new THREE.Group(); scene.add(cartGroup);     // carritos de reparto
   const ghostGroup = new THREE.Group(); scene.add(ghostGroup);   // preview del drag
 
   // Materiales dinamicos compartidos (dia/noche los mueve).
@@ -159,16 +192,29 @@ export function start(opts = {}) {
       const top = box(b.w * 0.84, 0.16, b.h * 0.84, beam);
       top.position.y = v.height; g.add(top);
     } else {
-      const body = box(b.w * 0.88, v.height, b.h * 0.88, stdMat(v.body));
-      body.position.y = v.height / 2; body.castShadow = true; body.receiveShadow = true; g.add(body);
-      const roof = box(b.w * 0.96, 0.3, b.h * 0.96, stdMat(v.roof, { roughness: 0.6 }));
-      roof.position.y = v.height + 0.15; roof.castShadow = true; g.add(roof);
+      // Granja: la casa ocupa SOLO la celda esquina del lote (deja las otras 3
+      // celdas libres para el campo de cultivos). El resto de kinds: cuerpo pleno.
+      const isFarm = b.kind === 'farm';
+      // Offset local (desde el centro del footprint) al centro de la celda-casa.
+      const ox = isFarm ? FARM_HOUSE_CELL[0] + 0.5 - b.w / 2 : 0;
+      const oz = isFarm ? FARM_HOUSE_CELL[1] + 0.5 - b.h / 2 : 0;
+      const bw = isFarm ? 0.9 : b.w * 0.88, bd = isFarm ? 0.9 : b.h * 0.88;
+      const rw = isFarm ? 0.98 : b.w * 0.96, rd = isFarm ? 0.98 : b.h * 0.96;
+      const ww = isFarm ? 0.92 : b.w * 0.9, wd = isFarm ? 0.92 : b.h * 0.9;
+      if (isFarm) { // tierra arada bajo todo el lote para leer la parcela
+        const soil = box(b.w * 0.96, 0.06, b.h * 0.96, stdMat([150, 120, 86], { roughness: 1 }));
+        soil.position.y = 0.03; soil.receiveShadow = true; g.add(soil);
+      }
+      const body = box(bw, v.height, bd, stdMat(v.body));
+      body.position.set(ox, v.height / 2, oz); body.castShadow = true; body.receiveShadow = true; g.add(body);
+      const roof = box(rw, 0.3, rd, stdMat(v.roof, { roughness: 0.6 }));
+      roof.position.set(ox, v.height + 0.15, oz); roof.castShadow = true; g.add(roof);
       const floors = b.level;
       const winMat = b.occupied ? winGlowMat : winDarkMat;
       for (let f = 0; f < floors; f++) {
         const wy = 0.45 + f * (v.height / floors);
-        const strip = box(b.w * 0.9, 0.3, b.h * 0.9, winMat);
-        strip.position.y = wy; g.add(strip);
+        const strip = box(ww, 0.3, wd, winMat);
+        strip.position.set(ox, wy, oz); g.add(strip);
       }
     }
     g.traverse(o => { if (o.isMesh) o.userData.bid = b.id; });
@@ -258,6 +304,60 @@ export function start(opts = {}) {
     }
   }
 
+  // ---- Cultivos de las granjas (matas crop ∝ stock/farmCap) ---------------
+  // Cantidad determinista: 0 stock = campo arado; farmCap = lleno (MAX_CROPS).
+  function farmCropCount(b) {
+    if (b.kind !== 'farm' || b.stage !== 'built') return 0;
+    const frac = ECON && ECON.farmCap ? (b.stock || 0) / ECON.farmCap : 0;
+    return Math.max(0, Math.min(MAX_CROPS, Math.round(frac * MAX_CROPS)));
+  }
+  function cropSig() {
+    let s = '';
+    for (const b of town.buildings) if (b.kind === 'farm') s += b.id + ':' + farmCropCount(b) + ';';
+    return s;
+  }
+  function rebuildCrops() {
+    disposeGroup(cropGroup);
+    for (const b of town.buildings) {
+      const n = farmCropCount(b);
+      for (let i = 0; i < n; i++) {
+        const s = CROP_SLOTS[i];
+        const g = prefabInstance('crop', SCALE_CROP);
+        g.position.set(b.x + s.cx + s.sx, 0.06, b.y + s.cy + s.sz);
+        cropGroup.add(g);
+      }
+    }
+  }
+  let lastCropSig = '';
+  function refreshCropsIfChanged() {
+    const s = cropSig();
+    if (s !== lastCropSig) { lastCropSig = s; rebuildCrops(); }
+  }
+
+  // ---- Carritos de reparto (cartsInTransit, orientados como los autos) -----
+  const cartEntries = new Map(); // cartId -> {group, px, pz}
+  function updateCarts() {
+    const seen = new Set();
+    for (const c of cartsInTransit(eco)) {
+      seen.add(c.id);
+      let e = cartEntries.get(c.id);
+      if (!e) {
+        const group = prefabInstance('cart', SCALE_CART);
+        cartGroup.add(group);
+        e = { group, px: c.x, pz: c.y };
+        cartEntries.set(c.id, e);
+      }
+      const wx = c.x + 0.5, wz = c.y + 0.5;
+      e.group.position.set(wx, 0.02, wz);
+      const dx = wx - e.px, dz = wz - e.pz;
+      if (dx * dx + dz * dz > 1e-6) e.group.rotation.y = Math.atan2(dx, dz);
+      e.px = wx; e.pz = wz;
+    }
+    for (const [id, e] of cartEntries) {
+      if (!seen.has(id)) { cartGroup.remove(e.group); cartEntries.delete(id); }
+    }
+  }
+
   // ---- Dia / noche --------------------------------------------------------
   function applyDayNight() {
     const t = timeOfDay(town);
@@ -306,7 +406,7 @@ export function start(opts = {}) {
   }
 
   // ---- Interaccion: modos, drag de zonas, hover ---------------------------
-  const MODES = { e: 'explore', 1: 'residential', 2: 'shop', 3: 'workspace' };
+  const MODES = { e: 'explore', 1: 'residential', 2: 'shop', 3: 'workspace', 4: 'farm', 5: 'warehouse', 6: 'market' };
   let mode = 'explore';
   const raycaster = new THREE.Raycaster();
   const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
@@ -356,7 +456,9 @@ export function start(opts = {}) {
     disposeGroup(ghostGroup);
     if (!dragging || !dragPath.length) return;
     const anchors = dragToAnchors(dragPath, town);
-    const ok = wouldPlace(anchors);
+    const cost = ECON ? ECON.placementCost[mode] * anchors.length : 0;
+    const affordable = !ECON || town.money >= cost;
+    const ok = wouldPlace(anchors) && affordable;
     const mat = new THREE.MeshBasicMaterial({ color: ok ? 0x66dd88 : 0xdd5566, transparent: true, opacity: 0.45 });
     for (const [x, y] of anchors) {
       const gm = box(2 * 0.96, 0.12, 2 * 0.96, mat);
@@ -392,7 +494,8 @@ export function start(opts = {}) {
   function onUp() {
     if (dragging) {
       const anchors = dragToAnchors(dragPath, town);
-      placeBlock(town, mode, anchors); // atomico: invalido no muta
+      const res = placeBlock(town, mode, anchors); // atomico: invalido no muta
+      if (res && res.ok === false && res.reason === 'funds') showNotice(GAME.TEXTS.noFunds);
       dragging = false; dragPath = []; disposeGroup(ghostGroup);
       rebuildStatic();
     }
@@ -417,13 +520,16 @@ export function start(opts = {}) {
     panel.style.left = (ev.clientX + 14) + 'px';
     panel.style.top = (ev.clientY + 14) + 'px';
   }
-  const KIND_TEXT = { residential: GAME.TEXTS.home, shop: GAME.TEXTS.shop, workspace: GAME.TEXTS.workspace };
-  const KIND_TITLE = { residential: GAME.TEXTS.residents, shop: GAME.TEXTS.shoppers, workspace: GAME.TEXTS.workers };
+  const T = GAME.TEXTS;
+  const KIND_TEXT = { residential: T.home, shop: T.shop, workspace: T.workspace, farm: T.farm, warehouse: T.warehouse, market: T.market };
+  const KIND_TITLE = { residential: T.residents, shop: T.shoppers, workspace: T.workers, farm: T.workers, warehouse: T.workers, market: T.shoppers };
+  const STOCK_KINDS = { farm: 1, warehouse: 1, market: 1 };
   function inspectHTML(b) {
     const title = KIND_TEXT[b.kind] || b.kind;
     const built = b.stage === 'built';
     let body = `<div class="ins-h">${title}</div><div class="ins-sub">Nv ${b.level} · ${built ? b.stage : GAME.TEXTS.underConstruction}</div>`;
     if (!built) return body;
+    if (STOCK_KINDS[b.kind]) body += `<div class="ins-stock">${T.stock}: ${Math.floor(b.stock || 0)}</div>`;
     if (!b.occupied) return body + `<div class="ins-vac">${GAME.TEXTS.vacant}</div>`;
     let ids = whoIsAt(ag, b.id);
     let list;
@@ -440,6 +546,17 @@ export function start(opts = {}) {
     return body;
   }
 
+  // ---- Aviso breve (p.ej. sin fondos) -------------------------------------
+  const notice = opts.notice || document.getElementById('notice');
+  let noticeTimer = null;
+  function showNotice(text) {
+    if (!notice) return;
+    notice.textContent = text;
+    notice.style.display = 'block';
+    if (noticeTimer) clearTimeout(noticeTimer);
+    noticeTimer = setTimeout(() => { notice.style.display = 'none'; }, 1400);
+  }
+
   // ---- HUD ----------------------------------------------------------------
   const hud = opts.hud || document.getElementById('hud');
   function fmtClock() {
@@ -447,13 +564,20 @@ export function start(opts = {}) {
     const hh = Math.floor(t) % 24, mm = Math.floor((t - Math.floor(t)) * 60);
     return String(hh).padStart(2, '0') + ':' + String(mm).padStart(2, '0');
   }
+  function modeLabel() {
+    const cost = ECON && ECON.placementCost[mode];
+    if (cost != null) return `modo: ${mode} · ${GAME.TEXTS.money} ${cost}`;
+    return `modo: ${mode}`;
+  }
   function updateHUD() {
     if (!hud) return;
+    const money = ECON ? Math.floor(town.money || 0) : 0;
     hud.innerHTML =
       `<span class="hud-clock">${fmtClock()}</span>` +
       `<span class="hud-pop">poblacion ${ag.residents.length}</span>` +
-      `<span class="hud-mode">modo: ${mode}</span>` +
-      `<span class="hud-keys">E explorar · 1 casa · 2 tienda · 3 taller · WASD/rueda camara</span>`;
+      (ECON ? `<span class="hud-money">${GAME.TEXTS.money} ${money}</span>` : '') +
+      `<span class="hud-mode">${modeLabel()}</span>` +
+      `<span class="hud-keys">E explorar · 1 casa · 2 tienda · 3 taller · 4 granja · 5 almacen · 6 mercado · WASD/rueda camara</span>`;
     highlightModeButtons();
   }
   function highlightModeButtons() {
@@ -505,14 +629,18 @@ export function start(opts = {}) {
     if (s !== lastSig) { lastSig = s; rebuildStatic(); }
   }
 
-  let syncAcc = 0;
+  let syncAcc = 0, cropAcc = 0;
   function frame(dt) {
     tick(town, dt);
     tickAgents(ag, town, GAME, dt);
+    tickEconomy(eco, town, GAME, dt, ag.residents);
     syncAcc += dt;
     if (syncAcc >= 1) { syncAgents(ag, town, GAME); syncAcc = 0; }
+    cropAcc += dt;
+    if (cropAcc >= 1) { cropAcc = 0; refreshCropsIfChanged(); }
     refreshStructIfChanged();
     updateMovers();
+    updateCarts();
     applyDayNight();
     updateHUD();
   }
@@ -529,6 +657,8 @@ export function start(opts = {}) {
   resize();
   applyCamera();
   rebuildStatic(); lastSig = structSig();
+  rebuildCrops(); lastCropSig = cropSig();
+  updateCarts();
   applyDayNight();
   updateHUD();
 
@@ -545,14 +675,16 @@ export function start(opts = {}) {
   // renderOnce: fuerza un render (rAF suspendido con la pestana oculta).
   function renderOnce() {
     refreshStructIfChanged();
+    refreshCropsIfChanged();
     updateMovers();
+    updateCarts();
     applyDayNight();
     updateHUD();
     renderer.render(scene, camera);
   }
 
   const MT = {
-    town, ag, game: GAME, renderer, scene, camera, renderOnce,
+    town, ag, eco, game: GAME, renderer, scene, camera, renderOnce,
     placeAt: (kind, anchors) => placeBlock(town, kind, anchors),
     setMode,
   };

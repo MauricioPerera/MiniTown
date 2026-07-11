@@ -44,7 +44,17 @@
     display: flex; gap: 14px; align-items: baseline; font-size: 12px; user-select: none;
   }
   #hud .hud-clock { color: var(--accent); font-weight: 700; font-variant-numeric: tabular-nums; font-size: 15px; }
+  #hud .hud-money { color: #9be29b; font-weight: 700; font-variant-numeric: tabular-nums; }
   #hud .hud-keys { opacity: 0.55; }
+
+  #notice {
+    position: fixed; top: 12px; left: 50%; transform: translateX(-50%); z-index: 12;
+    display: none; pointer-events: none;
+    font-family: "Segoe UI", system-ui, sans-serif; color: var(--panel-fg);
+    background: rgba(150, 40, 48, 0.92); border-radius: 10px; padding: 8px 16px;
+    backdrop-filter: blur(6px); box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    font-size: 13px; font-weight: 600; letter-spacing: 0.3px;
+  }
 
   #inspect {
     position: fixed; z-index: 11; display: none; pointer-events: none;
@@ -72,11 +82,15 @@
     <button data-mode="residential">Casa (1)</button>
     <button data-mode="shop">Tienda (2)</button>
     <button data-mode="workspace">Taller (3)</button>
+    <button data-mode="farm">Granja (4)</button>
+    <button data-mode="warehouse">Almacen (5)</button>
+    <button data-mode="market">Mercado (6)</button>
   </div>
 </div>
 
 <div id="hud"></div>
 <div id="inspect"></div>
+<div id="notice"></div>
 
 <script type="importmap">
 {
@@ -97,6 +111,7 @@ start({
   modebar: document.getElementById('modes'),
   hud: document.getElementById('hud'),
   panel: document.getElementById('inspect'),
+  notice: document.getElementById('notice'),
 });
 </script>
 </body>

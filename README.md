@@ -19,7 +19,8 @@ Un **city-sim cozy de vóxeles** — más god game contemplativo que juego de ge
 - **Explorar (E)** — modo por defecto: el mouse no coloca nada; movete y mirá.
 - **Zonas** — `1` casa · `2` tienda · `3` taller (o los botones). **Click y arrastre** coloca un bloque de **1 a 3 edificios pegados**: los caminos rodean el exterior del bloque, nunca pasan por adentro.
 - **Cámara** — WASD/flechas para paneo, rueda para zoom, arrastre con botón derecho.
-- **Inspección** — pasá el mouse sobre cualquier edificio: quiénes están adentro y qué hace cada uno (durmiendo, trabajando, comprando...).
+- **Inspección** — pasá el mouse sobre cualquier edificio: quiénes están adentro y qué hace cada uno (durmiendo, trabajando, comprando...), y el stock en los edificios de economía.
+- **Economía** — `4` granja · `5` almacén · `6` mercado. Colocar zonas cuesta monedas (HUD de dinero): las granjas producen a la vista (el campo se llena de cultivos), los carritos reparten granja → almacén → mercado **solo si hay conexión vial**, y cada compra de un vecino en el mercado paga al tesoro. Farmear financia el crecimiento del pueblo.
 
 Los edificios pasan por **losa → esqueleto → terminado**, se habitan, y suben de nivel con el tiempo. Cada residente tiene rutina propia (tres plantillas de horario), camina por los caminos con costo preferente, y **usa el auto** cuando el trayecto vial es largo. De noche el ambiente se enfría y las ventanas ocupadas y farolas emiten luz cálida.
 
@@ -49,7 +50,8 @@ Cambiar el balance del juego (¿días más largos? ¿más residentes por casa? �
 |---|---|
 | [`game/minitown.html`](game/minitown.html) | El juego (shell + UI). |
 | [`game/src/sim-core.mjs`](game/src/sim-core.mjs) | Simulación pura: zonas, bloques por drag, caminos automáticos, obra, crecimiento. |
-| [`game/src/agents.mjs`](game/src/agents.mjs) | Residentes: rutinas, pathfinding (Dijkstra), autos. |
+| [`game/src/agents.mjs`](game/src/agents.mjs) | Residentes: rutinas, pathfinding (Dijkstra), autos, empleos y compras. |
+| [`game/src/economy.mjs`](game/src/economy.mjs) | Economía: carritos de reparto por caminos, ventas y tesoro. |
 | [`game/src/render-core.mjs`](game/src/render-core.mjs) | Lógica de presentación pura: paleta día/noche, visual de edificios, cámara. |
 | [`game/src/render.mjs`](game/src/render.mjs) | Escena Three.js: instancias voxel, luces, hover, HUD. |
 | [`game/GAME.md`](game/GAME.md) + [`game/profiles/minitown.js`](game/profiles/minitown.js) | Datos + perfil de validación. |
