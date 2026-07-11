@@ -1,10 +1,14 @@
 # MiniTown
 
-🎮 **[Jugar online](https://mauricioperera.github.io/MiniTown/)** · sin instalar nada, corre en el navegador.
+🎮 **[Play online / Jugar online](https://mauricioperera.github.io/MiniTown/)** · runs in the browser, no install.
+
+**English** — A cozy voxel city-sim that plays more like a contemplative god game than a management game: place Residential/Shop/Workspace zones on empty land, roads appear around them on their own, buildings rise through visible construction stages, and the town comes alive — named residents with homes, jobs and schedules walk (or drive) its streets as day turns to night. All content and balance is data ([`game/GAME.md`](game/GAME.md), [GAME Protocol](https://github.com/MauricioPerera/game-protocol)); every module was built against hash-sealed frozen tests on a [KDD](https://github.com/MauricioPerera/KDD) template instance. Version history: [CHANGELOG.md](CHANGELOG.md).
+
+<a id="español"></a>
+
+## Español
 
 Un **city-sim cozy de vóxeles** — más god game contemplativo que juego de gestión. Colocás zonas en un terreno vacío, los caminos aparecen solos, los edificios se construyen a la vista, y el pueblo cobra vida: gente con nombre, casa, trabajo y horario que camina (o maneja) por sus calles mientras el día se vuelve noche.
-
-*A cozy voxel city-sim / god game: place zones, watch the town build itself, and follow its residents through the day/night cycle. Playable in the browser, no build step, no dependencies.*
 
 | Mañana | Noche |
 |---|---|
@@ -65,7 +69,7 @@ python -m unittest discover -s tests                         # suite del tooling
 
 ## Metodología
 
-Repo instanciado del template **[KDD](https://github.com/MauricioPerera/KDD)** (Knowledge-Driven Development: OKF + CCDD). Cada tarea fue un contrato con definición de hecho ejecutable; la implementación la hicieron agentes de IA efímeros contra ese oráculo, y el veredicto lo dio el gate determinista — no la opinión de nadie. Las reglas para agentes están en [`.agents/AGENTS.md`](.agents/AGENTS.md).
+Repo instanciado del template **[KDD](https://github.com/MauricioPerera/KDD)** (Knowledge-Driven Development: OKF + CCDD). Cada tarea fue un contrato con definición de hecho ejecutable; la implementación la hicieron agentes de IA efímeros contra ese oráculo, y el veredicto lo dio el gate determinista — no la opinión de nadie. Las reglas para agentes están en [`.agents/AGENTS.md`](.agents/AGENTS.md). Historial de versiones en [CHANGELOG.md](CHANGELOG.md).
 
 ## Licencia
 
