@@ -278,7 +278,7 @@ function updateMovers(dt) {
   for (const m of movers) {
     const n = m.path.length;
     if (n < 2) continue;
-    m.t = (m.t + m.speed * dt) % n;
+    m.t = (((m.t + m.speed * dt) % n) + n) % n;
     const i0 = Math.floor(m.t) % n;
     const i1 = (i0 + 1) % n;
     const frac = m.t - Math.floor(m.t);
@@ -412,7 +412,7 @@ resize();
 
 let last = performance.now();
 function animate(now) {
-  const dt = Math.min((now - last) / 1000, 0.05);
+  const dt = Math.min(Math.max((now - last) / 1000, 0), 0.05);
   last = now;
   updateMovers(dt);
   renderer.render(scene, camera);

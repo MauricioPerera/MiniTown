@@ -534,7 +534,7 @@ export function start(opts = {}) {
 
   let last = performance.now();
   function loop(now) {
-    const dt = Math.min((now - last) / 1000, 0.05);
+    const dt = Math.min(Math.max((now - last) / 1000, 0), 0.05);
     last = now;
     frame(dt);
     renderer.render(scene, camera);
