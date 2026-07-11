@@ -1,5 +1,7 @@
 # MiniTown
 
+🎮 **[Jugar online](https://mauricioperera.github.io/MiniTown/)** — city-sim cozy de vóxeles (god game): colocá zonas, mirá el pueblo construirse, y seguí a sus habitantes por el ciclo día/noche. Capturas en [`docs/screenshots/`](docs/screenshots/).
+
 [English](#english) | [Español](#español) | [Português](#português)
 
 <a id="english"></a>
