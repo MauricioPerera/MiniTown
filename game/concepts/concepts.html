@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MiniTown — Concepto visual</title>
+<style>
+  :root {
+    --panel-bg: rgba(28, 26, 38, 0.82);
+    --panel-fg: #f4eee6;
+    --accent: #ffbf6b;
+    --btn-bg: rgba(255, 255, 255, 0.10);
+    --btn-bg-active: #ffbf6b;
+    --btn-fg-active: #2a2233;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #0d0b14; }
+  #app { position: fixed; inset: 0; }
+  canvas { display: block; }
+  #ui {
+    position: fixed; top: 12px; left: 12px; z-index: 10;
+    font-family: "Segoe UI", system-ui, sans-serif; color: var(--panel-fg);
+    background: var(--panel-bg); border-radius: 14px; padding: 14px 16px;
+    backdrop-filter: blur(6px); box-shadow: 0 8px 28px rgba(0,0,0,0.35);
+    max-width: 300px; user-select: none;
+  }
+  #ui h1 { margin: 0 0 2px; font-size: 17px; letter-spacing: 0.4px; }
+  #ui .sub { margin: 0 0 10px; font-size: 11.5px; opacity: 0.7; }
+  #states { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  #states button {
+    font: inherit; font-size: 12px; cursor: pointer; color: var(--panel-fg);
+    background: var(--btn-bg); border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 9px; padding: 6px 10px; transition: background .15s, color .15s;
+  }
+  #states button:hover { background: rgba(255,255,255,0.2); }
+  #states button.active { background: var(--btn-bg-active); color: var(--btn-fg-active); border-color: transparent; font-weight: 600; }
+  #desc { font-size: 12px; line-height: 1.4; opacity: 0.85; margin: 0 0 12px; min-height: 32px; }
+  .row { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+  .row label { min-width: 34px; opacity: 0.8; }
+  #timeSlider { flex: 1; accent-color: var(--accent); }
+  #clock { min-width: 46px; text-align: right; font-variant-numeric: tabular-nums; color: var(--accent); font-weight: 600; }
+  #stats { margin-top: 10px; font-size: 11.5px; opacity: 0.72; display: flex; gap: 12px; }
+  #hint { position: fixed; bottom: 10px; left: 12px; z-index: 10; font-family: system-ui, sans-serif;
+    font-size: 11px; color: rgba(255,255,255,0.5); }
+  @media (prefers-reduced-motion: reduce) { #timeSlider { transition: none; } }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<div id="ui">
+  <h1>MiniTown</h1>
+  <p class="sub">Concepto visual — direccion de arte</p>
+  <div id="states"></div>
+  <p id="desc"></p>
+  <div class="row">
+    <label for="timeSlider">Hora</label>
+    <input id="timeSlider" type="range" min="0" max="1" step="0.005" value="0.5">
+    <span id="clock">12:00</span>
+  </div>
+  <div id="stats">
+    <span id="statPeople">gente: 0</span>
+    <span id="statCars">autos: 0</span>
+  </div>
+</div>
+<div id="hint">Camara semi-cenital · arrastrable no requerido · datos desde concept-data.mjs</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { GRID, TOWN_STATES, dayNightPalette } from './concept-data.mjs';
+
+// ---------------------------------------------------------------------------
+// Paleta de tonos por kind (residential calido, shop vivo, workspace sobrio).
+const KIND_COLOR = {
+  residential: 0xe8a56b, // calido, terracota suave
+  shop: 0xef6f8b,        // vivo, frambuesa
+  workspace: 0x7d94b8,   // sobrio, azul pizarra
+};
+const ROOF_COLOR = {
+  residential: 0xb5623a,
+  shop: 0xb23d63,
+  workspace: 0x4f5f7d,
+};
+const LEVEL_HEIGHT = { 1: 1.1, 2: 2.0, 3: 3.0 };
+
+// ---------------------------------------------------------------------------
+// Escena base
+const container = document.getElementById('app');
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+container.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0xcfe3f0, 34, 78);
+
+const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 400);
+
+// Encuadre god-game: elevacion ~55 grados, mirando al centro del pueblo.
+const center = new THREE.Vector3(GRID.w / 2, 0, GRID.h / 2);
+function placeCamera() {
+  const span = Math.max(GRID.w, GRID.h);
+  const dist = span * 1.15;
+  const elev = THREE.MathUtils.degToRad(55);
+  camera.position.set(
+    center.x,
+    Math.sin(elev) * dist,
+    center.z + Math.cos(elev) * dist
+  );
+  camera.lookAt(center);
+}
+
+// Luces
+const hemi = new THREE.HemisphereLight(0xffffff, 0x66707a, 0.6);
+scene.add(hemi);
+const ambient = new THREE.AmbientLight(0xffffff, 0.4);
+scene.add(ambient);
+const sun = new THREE.DirectionalLight(0xffffff, 1.0);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.camera.near = 1;
+sun.shadow.camera.far = 120;
+const sc = sun.shadow.camera;
+sc.left = -GRID.w; sc.right = GRID.w; sc.top = GRID.h; sc.bottom = -GRID.h;
+scene.add(sun);
+scene.add(sun.target);
+sun.target.position.copy(center);
+
+// Suelo (pasto)
+const groundMat = new THREE.MeshStandardMaterial({ color: 0x8fbf7a, roughness: 0.95 });
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(GRID.w + 8, GRID.h + 8), groundMat);
+ground.rotation.x = -Math.PI / 2;
+ground.position.set(GRID.w / 2, 0, GRID.h / 2);
+ground.receiveShadow = true;
+scene.add(ground);
+
+// Grupos dinamicos (se limpian al cambiar de estado)
+const townGroup = new THREE.Group();
+scene.add(townGroup);
+
+// Geometrias/material compartidos para marcadores animados
+const roadMat = new THREE.MeshStandardMaterial({ color: 0x9a9a9a, roughness: 1.0 });
+const windowMatCache = [];
+
+// Convierte celda de datos (x,y en grilla) a coordenada de mundo (centro celda).
+function cellToWorld(x, y) { return { wx: x + 0.5, wz: y + 0.5 }; }
+
+// ---------------------------------------------------------------------------
+// Construccion de un edificio segun stage/kind/level.
+function buildBuilding(b) {
+  const g = new THREE.Group();
+  const { wx, wz } = cellToWorld(b.x, b.y);
+  g.position.set(wx - 0.5 + b.w / 2, 0, wz - 0.5 + b.h / 2);
+  const baseColor = KIND_COLOR[b.kind];
+
+  if (b.stage === 'foundation') {
+    // Losa baja de hormigon.
+    const slab = new THREE.Mesh(
+      new THREE.BoxGeometry(b.w * 0.92, 0.18, b.h * 0.92),
+      new THREE.MeshStandardMaterial({ color: 0xb9b2a6, roughness: 1 })
+    );
+    slab.position.y = 0.09; slab.castShadow = true; slab.receiveShadow = true;
+    g.add(slab);
+    return g;
+  }
+
+  const h = LEVEL_HEIGHT[b.level] || 1.1;
+
+  if (b.stage === 'frame') {
+    // Esqueleto: losa + 4 columnas + viga superior (translucido, en obra).
+    const slab = new THREE.Mesh(
+      new THREE.BoxGeometry(b.w * 0.92, 0.16, b.h * 0.92),
+      new THREE.MeshStandardMaterial({ color: 0xb9b2a6, roughness: 1 })
+    );
+    slab.position.y = 0.08; slab.receiveShadow = true; g.add(slab);
+    const beamMat = new THREE.MeshStandardMaterial({ color: 0xc9a66b, roughness: 0.8 });
+    const cw = 0.16;
+    const px = (b.w / 2) * 0.8, pz = (b.h / 2) * 0.8;
+    for (const sx of [-px, px]) for (const sz of [-pz, pz]) {
+      const col = new THREE.Mesh(new THREE.BoxGeometry(cw, h, cw), beamMat);
+      col.position.set(sx, h / 2, sz); col.castShadow = true; g.add(col);
+    }
+    const top = new THREE.Mesh(new THREE.BoxGeometry(b.w * 0.86, cw, b.h * 0.86), beamMat);
+    top.position.y = h; g.add(top);
+    return g;
+  }
+
+  // built: cuerpo voxel + techo + ventanas emisivas.
+  const bodyH = h;
+  const body = new THREE.Mesh(
+    new THREE.BoxGeometry(b.w * 0.9, bodyH, b.h * 0.9),
+    new THREE.MeshStandardMaterial({ color: baseColor, roughness: 0.7 })
+  );
+  body.position.y = bodyH / 2; body.castShadow = true; body.receiveShadow = true;
+  g.add(body);
+
+  // Techo (prisma bajo, mas oscuro por kind).
+  const roof = new THREE.Mesh(
+    new THREE.BoxGeometry(b.w * 0.98, 0.3, b.h * 0.98),
+    new THREE.MeshStandardMaterial({ color: ROOF_COLOR[b.kind], roughness: 0.6 })
+  );
+  roof.position.y = bodyH + 0.15; roof.castShadow = true; g.add(roof);
+
+  // Ventanas emisivas (se encienden de noche). Una tira por piso.
+  const winMat = new THREE.MeshStandardMaterial({
+    color: 0xfff2cf, emissive: 0xffd27a, emissiveIntensity: 0, roughness: 0.4,
+  });
+  windowMatCache.push(winMat);
+  const floors = b.level;
+  for (let f = 0; f < floors; f++) {
+    const wy = 0.5 + f * (bodyH / floors);
+    const strip = new THREE.Mesh(new THREE.BoxGeometry(b.w * 0.92, 0.32, b.h * 0.92), winMat);
+    strip.position.y = wy; g.add(strip);
+  }
+  return g;
+}
+
+// Loseta de camino.
+function buildRoad(x, y) {
+  const { wx, wz } = cellToWorld(x, y);
+  const tile = new THREE.Mesh(new THREE.BoxGeometry(0.98, 0.08, 0.98), roadMat);
+  tile.position.set(wx, 0.04, wz); tile.receiveShadow = true;
+  return tile;
+}
+
+// ---------------------------------------------------------------------------
+// Marcadores animados (gente = capsulas, autos = cajitas) que recorren caminos.
+let movers = [];
+let streetlights = [];
+
+function makeMovers(state) {
+  movers = [];
+  const roads = state.roads;
+  if (roads.length === 0) return;
+  const path = roads.map(([x, y]) => { const c = cellToWorld(x, y); return new THREE.Vector3(c.wx, 0, c.wz); });
+
+  function spawn(count, isCar) {
+    for (let i = 0; i < count; i++) {
+      let mesh;
+      if (isCar) {
+        mesh = new THREE.Mesh(
+          new THREE.BoxGeometry(0.55, 0.3, 0.32),
+          new THREE.MeshStandardMaterial({ color: [0xd6584a, 0x4a86d6, 0xe0c24a][i % 3], roughness: 0.5 })
+        );
+        mesh.position.y = 0.2;
+      } else {
+        mesh = new THREE.Mesh(
+          new THREE.CapsuleGeometry(0.12, 0.28, 3, 6),
+          new THREE.MeshStandardMaterial({ color: [0x6fae8f, 0xc78fae, 0x8f9fc7, 0xc7b18f][i % 4], roughness: 0.7 })
+        );
+        mesh.position.y = 0.32;
+      }
+      mesh.castShadow = true;
+      const idx = Math.floor((i / Math.max(count, 1)) * path.length);
+      townGroup.add(mesh);
+      movers.push({
+        mesh, path, isCar,
+        t: (idx + (i * 0.13)) % path.length,
+        speed: (isCar ? 2.4 : 1.1) * (0.8 + 0.4 * ((i % 3) / 2)),
+        y: mesh.position.y,
+      });
+    }
+  }
+  spawn(state.people, false);
+  spawn(state.cars, true);
+}
+
+function updateMovers(dt) {
+  for (const m of movers) {
+    const n = m.path.length;
+    if (n < 2) continue;
+    m.t = (m.t + m.speed * dt) % n;
+    const i0 = Math.floor(m.t) % n;
+    const i1 = (i0 + 1) % n;
+    const frac = m.t - Math.floor(m.t);
+    const a = m.path[i0], b = m.path[i1];
+    m.mesh.position.x = a.x + (b.x - a.x) * frac;
+    m.mesh.position.z = a.z + (b.z - a.z) * frac;
+    m.mesh.position.y = m.y;
+    if (m.isCar) m.mesh.rotation.y = Math.atan2(b.x - a.x, b.z - a.z);
+    else m.mesh.position.y = m.y + Math.abs(Math.sin(m.t * 3)) * 0.05; // pasito
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Farolas: un poste con halo calido en cada esquina de bloque (subset de roads).
+function makeStreetlights(state) {
+  streetlights = [];
+  const roads = state.roads;
+  const step = Math.max(1, Math.floor(roads.length / 10));
+  for (let i = 0; i < roads.length; i += step) {
+    const [x, y] = roads[i];
+    const { wx, wz } = cellToWorld(x, y);
+    const pole = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.05, 0.05, 1.4, 6),
+      new THREE.MeshStandardMaterial({ color: 0x3b3b40, roughness: 0.8 })
+    );
+    pole.position.set(wx, 0.7, wz); pole.castShadow = true; townGroup.add(pole);
+    const bulb = new THREE.Mesh(
+      new THREE.SphereGeometry(0.14, 8, 8),
+      new THREE.MeshStandardMaterial({ color: 0xffe6b0, emissive: 0xffcf7a, emissiveIntensity: 0 })
+    );
+    bulb.position.set(wx, 1.45, wz); townGroup.add(bulb);
+    const halo = new THREE.PointLight(0xffcf7a, 0, 4.5, 2);
+    halo.position.set(wx, 1.5, wz); townGroup.add(halo);
+    streetlights.push({ bulb, halo });
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Estado actual y render de un TOWN_STATE.
+let currentState = null;
+
+function clearGroup(group) {
+  for (let i = group.children.length - 1; i >= 0; i--) {
+    const c = group.children[i];
+    group.remove(c);
+    c.traverse(o => { if (o.geometry) o.geometry.dispose(); });
+  }
+}
+
+function loadState(state) {
+  currentState = state;
+  windowMatCache.length = 0;
+  clearGroup(townGroup);
+  for (const [x, y] of state.roads) townGroup.add(buildRoad(x, y));
+  for (const b of state.buildings) townGroup.add(buildBuilding(b));
+  makeStreetlights(state);
+  makeMovers(state);
+  document.getElementById('desc').textContent = state.description;
+  document.getElementById('statPeople').textContent = 'gente: ' + state.people;
+  document.getElementById('statCars').textContent = 'autos: ' + state.cars;
+  const slider = document.getElementById('timeSlider');
+  slider.value = String(state.timeOfDay);
+  applyTime(state.timeOfDay);
+  updateStateButtons(state.id);
+}
+
+// ---------------------------------------------------------------------------
+// Aplica la hora: usa dayNightPalette para cielo, luces y encendido nocturno.
+function applyTime(t) {
+  const p = dayNightPalette(t);
+  const sky = new THREE.Color(p.sky[0] / 255, p.sky[1] / 255, p.sky[2] / 255);
+  const grd = new THREE.Color(p.ground[0] / 255, p.ground[1] / 255, p.ground[2] / 255);
+  scene.background = sky;
+  scene.fog.color.copy(sky);
+  groundMat.color.copy(grd);
+
+  ambient.intensity = 0.25 + 0.55 * p.ambient;
+  hemi.intensity = 0.25 + 0.5 * p.sunIntensity;
+  sun.intensity = 0.15 + 1.15 * p.sunIntensity;
+
+  // Sol viaja de este a oeste segun t; de noche queda bajo el horizonte.
+  const ang = (t - 0.25) * Math.PI * 2; // t=0.25 amanece (este)
+  const r = Math.max(GRID.w, GRID.h);
+  sun.position.set(center.x + Math.cos(ang) * r, Math.max(2, Math.sin(ang) * r), center.z + 4);
+  sun.color.setHSL(0.09, 0.5, 0.55 + 0.25 * p.sunIntensity);
+
+  // Ventanas calidas emisivas.
+  for (const m of windowMatCache) m.emissiveIntensity = 1.6 * p.windowGlow;
+  // Farolas: bulbo emisivo + halo point light calido difuso.
+  for (const s of streetlights) {
+    s.bulb.material.emissiveIntensity = 1.4 * p.streetlight;
+    s.halo.intensity = 2.2 * p.streetlight;
+  }
+
+  const hh = Math.floor(t * 24) % 24;
+  const mm = Math.floor((t * 24 - Math.floor(t * 24)) * 60);
+  document.getElementById('clock').textContent =
+    String(hh).padStart(2, '0') + ':' + String(mm).padStart(2, '0');
+}
+
+// ---------------------------------------------------------------------------
+// UI: botones de estado + slider.
+function updateStateButtons(activeId) {
+  for (const btn of document.querySelectorAll('#states button')) {
+    btn.classList.toggle('active', btn.dataset.id === activeId);
+  }
+}
+const statesEl = document.getElementById('states');
+for (const s of TOWN_STATES) {
+  const btn = document.createElement('button');
+  btn.textContent = s.name;
+  btn.dataset.id = s.id;
+  btn.addEventListener('click', () => loadState(s));
+  statesEl.appendChild(btn);
+}
+document.getElementById('timeSlider').addEventListener('input', e => {
+  applyTime(parseFloat(e.target.value));
+});
+
+// ---------------------------------------------------------------------------
+// Resize + loop
+function resize() {
+  const w = window.innerWidth, h = window.innerHeight;
+  renderer.setSize(w, h);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+  placeCamera();
+}
+window.addEventListener('resize', resize);
+resize();
+
+let last = performance.now();
+function animate(now) {
+  const dt = Math.min((now - last) / 1000, 0.05);
+  last = now;
+  updateMovers(dt);
+  renderer.render(scene, camera);
+  requestAnimationFrame(animate);
+}
+
+// Arranca en el pueblo crecido (mas vistoso) o el primero disponible.
+loadState(TOWN_STATES.find(s => s.id === 'grown') || TOWN_STATES[0]);
+requestAnimationFrame(animate);
+
+// Hook de verificacion/captura (render bajo demanda, util con la pestana oculta
+// donde rAF esta suspendido). No forma parte del juego.
+window.MT = { renderer, scene, camera, loadState, applyTime, updateMovers, TOWN_STATES };
+</script>
+</body>
+</html>
