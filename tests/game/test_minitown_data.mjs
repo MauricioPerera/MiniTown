@@ -1,4 +1,5 @@
 // Tests CONGELADOS (oraculo del PM) para game/GAME.md + game/profiles/minitown.js
+// v2: economia (kinds farm/warehouse/market + coleccion econ + prefabs crop/cart).
 // NO EDITAR: el contrato knowledge/contracts/minitown-data.md sella este archivo por hash.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -13,6 +14,8 @@ const { splitFrontMatter, parseYamlSubset } = require(path.join(ROOT, 'game/tool
 const { lintGame } = require(path.join(ROOT, 'game/tools/game-lint-core.js'));
 const { buildGame } = require(path.join(ROOT, 'game/tools/game-build-core.js'));
 const profile = require(path.join(ROOT, 'game/profiles/minitown.js'));
+
+const ALL_KINDS = ['farm', 'market', 'residential', 'shop', 'warehouse', 'workspace'];
 
 function loadData() {
   const raw = readFileSync(path.join(ROOT, 'game/GAME.md'), 'utf8');
@@ -29,7 +32,7 @@ test('perfil minitown: forma correcta y compone voxel', () => {
   assert.ok(Array.isArray(profile.refs));
   assert.ok(Array.isArray(profile.derive));
   const keys = profile.derive.map(d => d.key);
-  for (const k of ['MATERIALS', 'PREFABS', 'VOXELS', 'KINDS', 'VARIANTS', 'STAGES', 'PALETTE', 'SCHEDULES', 'SIM', 'TEXTS', 'NAMES']) {
+  for (const k of ['MATERIALS', 'PREFABS', 'VOXELS', 'KINDS', 'VARIANTS', 'STAGES', 'PALETTE', 'SCHEDULES', 'SIM', 'TEXTS', 'NAMES', 'ECON']) {
     assert.ok(keys.includes(k), `derive sin clave ${k}`);
   }
 });
@@ -41,10 +44,10 @@ test('GAME.md pasa el lint con 0 errores', () => {
   assert.deepEqual(errors, [], 'lint con errores: ' + JSON.stringify(errors.slice(0, 5)));
 });
 
-test('artefacto derivado: KINDS, VARIANTS y STAGES', () => {
+test('artefacto derivado: KINDS (6), VARIANTS y STAGES', () => {
   const { data } = loadData();
   const g = buildGame(data, profile);
-  assert.deepEqual(Object.keys(g.KINDS).sort(), ['residential', 'shop', 'workspace']);
+  assert.deepEqual(Object.keys(g.KINDS).sort(), ALL_KINDS);
   for (const [kind, spec] of Object.entries(g.KINDS)) {
     assert.ok(Array.isArray(spec.capacityPerLevel) && spec.capacityPerLevel.length === 3, `${kind} sin capacityPerLevel[3]`);
     for (const c of spec.capacityPerLevel) assert.ok(Number.isInteger(c) && c >= 1);
@@ -69,6 +72,24 @@ test('artefacto derivado: PALETTE dia/noche', () => {
   }
 });
 
+test('artefacto derivado: ECON completa y coherente', () => {
+  const { data } = loadData();
+  const g = buildGame(data, profile);
+  const e = g.ECON;
+  assert.ok(e && typeof e === 'object', 'falta ECON');
+  assert.deepEqual(Object.keys(e.placementCost).sort(), ALL_KINDS, 'placementCost debe cubrir exactamente los 6 kinds');
+  for (const [k, c] of Object.entries(e.placementCost)) assert.ok(Number.isInteger(c) && c >= 1, `placementCost.${k}`);
+  assert.ok(Number.isInteger(e.startingMoney) && e.startingMoney >= 3 * Math.min(...Object.values(e.placementCost)),
+    'startingMoney debe alcanzar para al menos 3 bloques baratos');
+  assert.ok(typeof e.salePrice === 'number' && e.salePrice > 0);
+  assert.ok(Array.isArray(e.farmRatePerLevel) && e.farmRatePerLevel.length === 3 && e.farmRatePerLevel.every(r => r > 0), 'farmRatePerLevel');
+  for (let i = 1; i < 3; i++) assert.ok(e.farmRatePerLevel[i] >= e.farmRatePerLevel[i - 1], 'farmRatePerLevel no crece');
+  assert.ok(Number.isInteger(e.cartLoad) && e.cartLoad >= 1);
+  for (const k of ['farmCap', 'warehouseCap', 'marketCap']) assert.ok(Number.isInteger(e[k]) && e[k] >= e.cartLoad, `${k} < cartLoad`);
+  assert.ok(Number.isInteger(e.restockBelow) && e.restockBelow >= 1 && e.restockBelow <= e.marketCap, 'restockBelow fuera de rango');
+  assert.ok(typeof e.cartSpeed === 'number' && e.cartSpeed > 0);
+});
+
 test('artefacto derivado: SCHEDULES, SIM, NAMES y TEXTS', () => {
   const { data } = loadData();
   const g = buildGame(data, profile);
@@ -86,30 +107,33 @@ test('artefacto derivado: SCHEDULES, SIM, NAMES y TEXTS', () => {
   }
   const names = g.NAMES;
   assert.ok(Array.isArray(names) && names.length >= 20 && new Set(names).size === names.length, 'NAMES: minimo 20 unicos');
-  for (const k of ['home', 'shop', 'workspace', 'residents', 'workers', 'shoppers', 'underConstruction', 'vacant']) {
+  for (const k of ['home', 'shop', 'workspace', 'residents', 'workers', 'shoppers', 'underConstruction', 'vacant',
+    'farm', 'warehouse', 'market', 'money', 'stock', 'noFunds']) {
     assert.ok(typeof g.TEXTS[k] === 'string' && g.TEXTS[k].length > 0, `TEXTS.${k} faltante o vacio`);
   }
 });
 
-test('arte voxel: gente, autos y props con materiales existentes', () => {
+test('arte voxel: gente, autos, props y economia con materiales existentes', () => {
   const { data } = loadData();
   const g = buildGame(data, profile);
   const names = Object.keys(g.VOXELS || {});
   assert.ok(names.filter(n => n.startsWith('person_')).length >= 4, 'menos de 4 modelos person_*');
   assert.ok(names.filter(n => n.startsWith('car_')).length >= 3, 'menos de 3 modelos car_*');
-  for (const p of ['streetlight', 'tree']) assert.ok(names.includes(p), `falta prefab ${p}`);
+  for (const p of ['streetlight', 'tree', 'crop', 'cart']) assert.ok(names.includes(p), `falta prefab ${p}`);
   for (const [n, st] of Object.entries(g.VOXELS)) {
     assert.ok(st.count > 0, `estructura ${n} vacia`);
     for (const v of st.voxels) assert.ok(g.MATERIALS[v.m], `estructura ${n} usa material inexistente ${v.m}`);
   }
 });
 
-test('reglas del perfil: detectan horario desordenado y color invalido', () => {
+test('reglas del perfil: horario desordenado, color invalido y econ invalida', () => {
   const base = { version: '0.1', name: 'x', profile: 'minitown' };
   const badSchedule = lintGame({ ...base, schedules: { w: { wake: 9, workStart: 8, workEnd: 17, sleep: 22 } } }, '', { profile });
   assert.ok(badSchedule.some(f => f.level === 'error' && f.rule === 'mt-schedule-order'), 'no detecto horario desordenado');
   const badColor = lintGame({ ...base, buildingVariants: { residential: [{ body: [300, 0, 0], roof: [0, 0, 0], trim: [0, 0, 0] }] } }, '', { profile });
   assert.ok(badColor.some(f => f.level === 'error' && f.rule === 'mt-variant-color'), 'no detecto color invalido');
+  const badEcon = lintGame({ ...base, econ: { salePrice: -1 } }, '', { profile });
+  assert.ok(badEcon.some(f => f.level === 'error' && f.rule === 'mt-econ'), 'no detecto econ invalida');
 });
 
 test('game-data.generated.js commiteado sin drift respecto a GAME.md', () => {

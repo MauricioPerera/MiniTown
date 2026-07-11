@@ -155,6 +155,27 @@ window.GAME = {
         160,
         90
       ]
+    },
+    "CROP": {
+      "color": [
+        110,
+        175,
+        85
+      ]
+    },
+    "FRUIT": {
+      "color": [
+        220,
+        90,
+        70
+      ]
+    },
+    "CART": {
+      "color": [
+        165,
+        115,
+        70
+      ]
     }
   },
   "PREFABS": {
@@ -422,6 +443,60 @@ window.GAME = {
           "y": 1,
           "z": 0,
           "m": "CAR_GREEN"
+        }
+      ]
+    },
+    "crop": {
+      "size": [
+        1,
+        2,
+        1
+      ],
+      "cells": [
+        {
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "m": "CROP"
+        },
+        {
+          "x": 0,
+          "y": 1,
+          "z": 0,
+          "m": "FRUIT"
+        }
+      ]
+    },
+    "cart": {
+      "size": [
+        2,
+        2,
+        1
+      ],
+      "cells": [
+        {
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "m": "WHEEL"
+        },
+        {
+          "x": 1,
+          "y": 0,
+          "z": 0,
+          "m": "WHEEL"
+        },
+        {
+          "x": 0,
+          "y": 1,
+          "z": 0,
+          "m": "CART"
+        },
+        {
+          "x": 1,
+          "y": 1,
+          "z": 0,
+          "m": "CART"
         }
       ]
     },
@@ -713,6 +788,30 @@ window.GAME = {
       "place": [
         {
           "prefab": "tree",
+          "at": [
+            0,
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    "crop": {
+      "place": [
+        {
+          "prefab": "crop",
+          "at": [
+            0,
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    "cart": {
+      "place": [
+        {
+          "prefab": "cart",
           "at": [
             0,
             0,
@@ -1247,6 +1346,76 @@ window.GAME = {
           "m": "LEAF"
         }
       ]
+    },
+    "crop": {
+      "count": 2,
+      "bounds": {
+        "min": [
+          0,
+          0,
+          0
+        ],
+        "max": [
+          0,
+          1,
+          0
+        ]
+      },
+      "voxels": [
+        {
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "m": "CROP"
+        },
+        {
+          "x": 0,
+          "y": 1,
+          "z": 0,
+          "m": "FRUIT"
+        }
+      ]
+    },
+    "cart": {
+      "count": 4,
+      "bounds": {
+        "min": [
+          0,
+          0,
+          0
+        ],
+        "max": [
+          1,
+          1,
+          0
+        ]
+      },
+      "voxels": [
+        {
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "m": "WHEEL"
+        },
+        {
+          "x": 1,
+          "y": 0,
+          "z": 0,
+          "m": "WHEEL"
+        },
+        {
+          "x": 0,
+          "y": 1,
+          "z": 0,
+          "m": "CART"
+        },
+        {
+          "x": 1,
+          "y": 1,
+          "z": 0,
+          "m": "CART"
+        }
+      ]
     }
   },
   "KINDS": {
@@ -1284,6 +1453,42 @@ window.GAME = {
         3,
         5,
         7
+      ]
+    },
+    "farm": {
+      "capacityPerLevel": [
+        2,
+        3,
+        4
+      ],
+      "heightPerLevel": [
+        1,
+        2,
+        3
+      ]
+    },
+    "warehouse": {
+      "capacityPerLevel": [
+        2,
+        4,
+        6
+      ],
+      "heightPerLevel": [
+        2,
+        3,
+        4
+      ]
+    },
+    "market": {
+      "capacityPerLevel": [
+        3,
+        5,
+        7
+      ],
+      "heightPerLevel": [
+        2,
+        3,
+        4
       ]
     }
   },
@@ -1446,6 +1651,165 @@ window.GAME = {
           236
         ]
       }
+    ],
+    "farm": [
+      {
+        "body": [
+          126,
+          176,
+          96
+        ],
+        "roof": [
+          140,
+          100,
+          60
+        ],
+        "trim": [
+          206,
+          186,
+          146
+        ]
+      },
+      {
+        "body": [
+          146,
+          190,
+          112
+        ],
+        "roof": [
+          158,
+          116,
+          72
+        ],
+        "trim": [
+          220,
+          202,
+          162
+        ]
+      },
+      {
+        "body": [
+          108,
+          158,
+          82
+        ],
+        "roof": [
+          124,
+          88,
+          52
+        ],
+        "trim": [
+          194,
+          172,
+          132
+        ]
+      }
+    ],
+    "warehouse": [
+      {
+        "body": [
+          150,
+          152,
+          158
+        ],
+        "roof": [
+          120,
+          92,
+          62
+        ],
+        "trim": [
+          186,
+          188,
+          194
+        ]
+      },
+      {
+        "body": [
+          168,
+          170,
+          176
+        ],
+        "roof": [
+          136,
+          104,
+          70
+        ],
+        "trim": [
+          202,
+          204,
+          210
+        ]
+      },
+      {
+        "body": [
+          132,
+          134,
+          142
+        ],
+        "roof": [
+          106,
+          80,
+          54
+        ],
+        "trim": [
+          172,
+          174,
+          182
+        ]
+      }
+    ],
+    "market": [
+      {
+        "body": [
+          232,
+          152,
+          74
+        ],
+        "roof": [
+          214,
+          92,
+          62
+        ],
+        "trim": [
+          255,
+          226,
+          190
+        ]
+      },
+      {
+        "body": [
+          244,
+          170,
+          96
+        ],
+        "roof": [
+          226,
+          108,
+          78
+        ],
+        "trim": [
+          255,
+          234,
+          204
+        ]
+      },
+      {
+        "body": [
+          214,
+          132,
+          58
+        ],
+        "roof": [
+          196,
+          76,
+          50
+        ],
+        "trim": [
+          250,
+          214,
+          176
+        ]
+      }
     ]
   },
   "STAGES": {
@@ -1526,7 +1890,13 @@ window.GAME = {
     "workers": "Trabajadores",
     "shoppers": "Clientes",
     "underConstruction": "En construccion",
-    "vacant": "Vacante"
+    "vacant": "Vacante",
+    "farm": "Granja",
+    "warehouse": "Almacen",
+    "market": "Mercado",
+    "money": "Dinero",
+    "stock": "Stock",
+    "noFunds": "Sin fondos"
   },
   "NAMES": [
     "Ana",
@@ -1555,5 +1925,28 @@ window.GAME = {
     "Ximena",
     "Yago",
     "Zoe"
-  ]
+  ],
+  "ECON": {
+    "startingMoney": 100,
+    "placementCost": {
+      "residential": 10,
+      "shop": 15,
+      "workspace": 20,
+      "farm": 12,
+      "warehouse": 18,
+      "market": 16
+    },
+    "salePrice": 5,
+    "farmRatePerLevel": [
+      4,
+      6,
+      9
+    ],
+    "farmCap": 20,
+    "warehouseCap": 50,
+    "marketCap": 30,
+    "cartLoad": 5,
+    "restockBelow": 10,
+    "cartSpeed": 3
+  }
 };

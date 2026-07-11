@@ -28,8 +28,10 @@ function adjacentToUnion(union, cells) {
 }
 
 // ---- API ----
+const STOCK_KINDS = { farm: true, warehouse: true, market: true };
+
 export function createTown({ w, h, game }) {
-  return {
+  const town = {
     w, h, game,
     buildings: [],
     blocks: [],
@@ -39,6 +41,8 @@ export function createTown({ w, h, game }) {
     nextBlockId: 1,
     variantCounters: {},
   };
+  if (game && game.ECON) town.money = game.ECON.startingMoney;
+  return town;
 }
 
 export function buildingAt(town, x, y) {
@@ -107,6 +111,13 @@ export function placeBlock(town, kind, anchors) {
     const res = validateAnchor(town, union, anchors[i], i === 0);
     if (!res.ok) return res;
   }
+  // Con ECON: cobro por edificio. Rechazo sin fondos no muta el town.
+  const econ = town.game.ECON;
+  if (econ) {
+    const cost = econ.placementCost[kind] * anchors.length;
+    if (town.money < cost) return { ok: false, reason: 'funds' };
+    town.money -= cost;
+  }
   // Fase de aplicacion: atomica (todo validado).
   const blockId = town.nextBlockId++;
   const buildingIds = [];
@@ -119,6 +130,7 @@ export function placeBlock(town, kind, anchors) {
       variant: nextVariant(town, kind),
       age: 0,
     };
+    if (STOCK_KINDS[kind]) b.stock = 0;
     town.buildings.push(b);
     buildingIds.push(id);
   }
@@ -145,8 +157,19 @@ function advanceBuilding(town, b, dt) {
   b.capacity = town.game.KINDS[b.kind].capacityPerLevel[level - 1];
 }
 
+function produceFarm(town, b, dt) {
+  const econ = town.game.ECON;
+  if (!econ || b.kind !== 'farm' || b.stage !== 'built' || !b.occupied) return;
+  const gameHours = dt / town.game.SIM.dayLengthSec * 24;
+  const rate = econ.farmRatePerLevel[b.level - 1];
+  let stock = (b.stock || 0) + rate * gameHours;
+  if (stock > econ.farmCap) stock = econ.farmCap;
+  b.stock = stock;
+}
+
 export function tick(town, dt) {
   town.clock += dt;
   for (const b of town.buildings) advanceBuilding(town, b, dt);
+  for (const b of town.buildings) produceFarm(town, b, dt);
   return town;
 }

@@ -6,10 +6,16 @@ buildingKinds:
   residential: { capacityPerLevel: [2, 4, 6], heightPerLevel: [2, 4, 6] }
   shop: { capacityPerLevel: [3, 5, 8], heightPerLevel: [2, 3, 5] }
   workspace: { capacityPerLevel: [4, 8, 12], heightPerLevel: [3, 5, 7] }
+  farm: { capacityPerLevel: [2, 3, 4], heightPerLevel: [1, 2, 3] }
+  warehouse: { capacityPerLevel: [2, 4, 6], heightPerLevel: [2, 3, 4] }
+  market: { capacityPerLevel: [3, 5, 7], heightPerLevel: [2, 3, 4] }
 buildingVariants:
   residential: [{ body: [214, 132, 92], roof: [150, 66, 48], trim: [245, 226, 200] }, { body: [230, 168, 110], roof: [166, 84, 54], trim: [250, 235, 210] }, { body: [198, 110, 74], roof: [130, 58, 44], trim: [240, 214, 184] }]
   shop: [{ body: [206, 74, 118], roof: [150, 40, 80], trim: [255, 232, 214] }, { body: [224, 96, 140], roof: [168, 52, 96], trim: [255, 240, 224] }, { body: [188, 58, 100], roof: [132, 34, 70], trim: [250, 224, 206] }]
   workspace: [{ body: [86, 118, 168], roof: [54, 78, 120], trim: [214, 226, 240] }, { body: [102, 134, 182], roof: [64, 90, 132], trim: [224, 234, 246] }, { body: [70, 100, 148], roof: [44, 66, 104], trim: [204, 218, 236] }]
+  farm: [{ body: [126, 176, 96], roof: [140, 100, 60], trim: [206, 186, 146] }, { body: [146, 190, 112], roof: [158, 116, 72], trim: [220, 202, 162] }, { body: [108, 158, 82], roof: [124, 88, 52], trim: [194, 172, 132] }]
+  warehouse: [{ body: [150, 152, 158], roof: [120, 92, 62], trim: [186, 188, 194] }, { body: [168, 170, 176], roof: [136, 104, 70], trim: [202, 204, 210] }, { body: [132, 134, 142], roof: [106, 80, 54], trim: [172, 174, 182] }]
+  market: [{ body: [232, 152, 74], roof: [214, 92, 62], trim: [255, 226, 190] }, { body: [244, 170, 96], roof: [226, 108, 78], trim: [255, 234, 204] }, { body: [214, 132, 58], roof: [196, 76, 50], trim: [250, 214, 176] }]
 stages:
   foundation: { durationSec: 4 }
   frame: { durationSec: 6 }
@@ -31,6 +37,17 @@ sim:
   carSpeed: 4
   residentsPerHouseLevel: [2, 4, 6]
   jobsPerWorkspaceLevel: [4, 8, 12]
+econ:
+  startingMoney: 100
+  placementCost: { residential: 10, shop: 15, workspace: 20, farm: 12, warehouse: 18, market: 16 }
+  salePrice: 5
+  farmRatePerLevel: [4, 6, 9]
+  farmCap: 20
+  warehouseCap: 50
+  marketCap: 30
+  cartLoad: 5
+  restockBelow: 10
+  cartSpeed: 3
 texts:
   home: Casa
   shop: Tienda
@@ -40,6 +57,12 @@ texts:
   shoppers: Clientes
   underConstruction: En construccion
   vacant: Vacante
+  farm: Granja
+  warehouse: Almacen
+  market: Mercado
+  money: Dinero
+  stock: Stock
+  noFunds: Sin fondos
 names: [Ana, Beto, Carla, Diego, Elena, Fabio, Gina, Hugo, Iris, Juan, Kevin, Lucia, Marco, Nadia, Omar, Paula, Quique, Rosa, Sergio, Tania, Ulises, Vera, Willy, Ximena, Yago, Zoe]
 materials:
   SKIN: { color: [240, 200, 170] }
@@ -63,6 +86,9 @@ materials:
   LAMP: { color: [255, 230, 150] }
   TRUNK: { color: [120, 80, 50] }
   LEAF: { color: [90, 160, 90] }
+  CROP: { color: [110, 175, 85] }
+  FRUIT: { color: [220, 90, 70] }
+  CART: { color: [165, 115, 70] }
 prefabs:
   person_a: { size: [1, 4, 1], cells: [{ x: 0, y: 0, z: 0, m: PANTS_DARK }, { x: 0, y: 1, z: 0, m: SHIRT_RED }, { x: 0, y: 2, z: 0, m: SKIN }, { x: 0, y: 3, z: 0, m: HAIR_BROWN }] }
   person_b: { size: [1, 4, 1], cells: [{ x: 0, y: 0, z: 0, m: PANTS_BLUE }, { x: 0, y: 1, z: 0, m: SHIRT_BLUE }, { x: 0, y: 2, z: 0, m: SKIN2 }, { x: 0, y: 3, z: 0, m: HAIR_BLACK }] }
@@ -71,6 +97,8 @@ prefabs:
   car_red: { size: [3, 2, 1], cells: [{ x: 0, y: 0, z: 0, m: WHEEL }, { x: 1, y: 0, z: 0, m: CAR_RED }, { x: 2, y: 0, z: 0, m: WHEEL }, { x: 0, y: 1, z: 0, m: CAR_RED }, { x: 1, y: 1, z: 0, m: GLASS }, { x: 2, y: 1, z: 0, m: CAR_RED }] }
   car_blue: { size: [3, 2, 1], cells: [{ x: 0, y: 0, z: 0, m: WHEEL }, { x: 1, y: 0, z: 0, m: CAR_BLUE }, { x: 2, y: 0, z: 0, m: WHEEL }, { x: 0, y: 1, z: 0, m: CAR_BLUE }, { x: 1, y: 1, z: 0, m: GLASS }, { x: 2, y: 1, z: 0, m: CAR_BLUE }] }
   car_green: { size: [3, 2, 1], cells: [{ x: 0, y: 0, z: 0, m: WHEEL }, { x: 1, y: 0, z: 0, m: CAR_GREEN }, { x: 2, y: 0, z: 0, m: WHEEL }, { x: 0, y: 1, z: 0, m: CAR_GREEN }, { x: 1, y: 1, z: 0, m: GLASS }, { x: 2, y: 1, z: 0, m: CAR_GREEN }] }
+  crop: { size: [1, 2, 1], cells: [{ x: 0, y: 0, z: 0, m: CROP }, { x: 0, y: 1, z: 0, m: FRUIT }] }
+  cart: { size: [2, 2, 1], cells: [{ x: 0, y: 0, z: 0, m: WHEEL }, { x: 1, y: 0, z: 0, m: WHEEL }, { x: 0, y: 1, z: 0, m: CART }, { x: 1, y: 1, z: 0, m: CART }] }
   streetlight: { size: [1, 3, 1], cells: [{ x: 0, y: 0, z: 0, m: METAL }, { x: 0, y: 1, z: 0, m: METAL }, { x: 0, y: 2, z: 0, m: LAMP }] }
   tree: { size: [3, 5, 3], cells: [{ x: 1, y: 0, z: 1, m: TRUNK }, { x: 1, y: 1, z: 1, m: TRUNK }, { x: 0, y: 2, z: 0, m: LEAF }, { x: 1, y: 2, z: 0, m: LEAF }, { x: 2, y: 2, z: 0, m: LEAF }, { x: 0, y: 2, z: 1, m: LEAF }, { x: 1, y: 2, z: 1, m: LEAF }, { x: 2, y: 2, z: 1, m: LEAF }, { x: 0, y: 2, z: 2, m: LEAF }, { x: 1, y: 2, z: 2, m: LEAF }, { x: 2, y: 2, z: 2, m: LEAF }, { x: 0, y: 3, z: 0, m: LEAF }, { x: 1, y: 3, z: 0, m: LEAF }, { x: 2, y: 3, z: 0, m: LEAF }, { x: 0, y: 3, z: 1, m: LEAF }, { x: 1, y: 3, z: 1, m: LEAF }, { x: 2, y: 3, z: 1, m: LEAF }, { x: 0, y: 3, z: 2, m: LEAF }, { x: 1, y: 3, z: 2, m: LEAF }, { x: 2, y: 3, z: 2, m: LEAF }, { x: 1, y: 4, z: 0, m: LEAF }, { x: 0, y: 4, z: 1, m: LEAF }, { x: 1, y: 4, z: 1, m: LEAF }, { x: 2, y: 4, z: 1, m: LEAF }, { x: 1, y: 4, z: 2, m: LEAF }] }
 structures:
@@ -83,6 +111,8 @@ structures:
   car_green: { place: [{ prefab: car_green, at: [0, 0, 0] }] }
   streetlight: { place: [{ prefab: streetlight, at: [0, 0, 0] }] }
   tree: { place: [{ prefab: tree, at: [0, 0, 0] }] }
+  crop: { place: [{ prefab: crop, at: [0, 0, 0] }] }
+  cart: { place: [{ prefab: cart, at: [0, 0, 0] }] }
 ---
 
 ## Overview
@@ -102,7 +132,9 @@ sigue las capturas de `docs/concepts/`.
 - `capacityPerLevel`: 3 enteros >= 1 no decrecientes (cuanta gente cabe segun el nivel).
 - `heightPerLevel`: 3 numeros > 0 (altura visual del edificio segun el nivel).
 
-Kinds: `residential` (casas), `shop` (comercios), `workspace` (talleres/oficinas).
+Los 6 kinds (v2): `residential` (casas), `shop` (comercios), `workspace` (talleres/oficinas),
+`farm` (granjas que producen), `warehouse` (almacenes que acopian), `market` (mercados que
+venden). Los tres ultimos forman la cadena de farmeo/economia.
 
 ## Building Variants
 `buildingVariants` da, por kind, una lista de >= 3 paletas `{body, roof, trim}` (cada una rgb
@@ -112,6 +144,9 @@ coherentes con los conceptos:
 - `residential`: calido/terracota.
 - `shop`: vivo/frambuesa.
 - `workspace`: sobrio/azul.
+- `farm`: verde con techo de madera (campo cultivado).
+- `warehouse`: gris con techo de madera (galpon sobrio).
+- `market`: naranja con toldo (puesto vivo y llamativo).
 
 ## Stages
 `stages` describe las tres etapas de construccion de un edificio, cada una con `durationSec`
@@ -139,17 +174,34 @@ coherentes con los conceptos:
 - `residentsPerHouseLevel`: residentes por nivel de casa (3 enteros >= 1 no decrecientes).
 - `jobsPerWorkspaceLevel`: empleos por nivel de taller (3 enteros >= 1 no decrecientes).
 
+## Econ
+`econ` (v2) reune el balance de la economia de farmeo (granja -> almacen -> mercado):
+
+- `startingMoney`: tesoro inicial del jugador (entero, alcanza para >= 3 bloques baratos).
+- `placementCost`: costo de colocar cada uno de los 6 kinds (mapa de enteros >= 1).
+- `salePrice`: precio de venta por unidad de stock en el mercado (> 0).
+- `farmRatePerLevel`: produccion de la granja por nivel, en unidades por hora de juego
+  (3 numeros > 0 no decrecientes).
+- `farmCap` / `warehouseCap` / `marketCap`: capacidad de stock de granja, almacen y mercado
+  (enteros >= `cartLoad`).
+- `cartLoad`: unidades que carga un carrito de reparto por viaje (>= 1).
+- `restockBelow`: umbral de stock del mercado que dispara un reabastecimiento (en
+  [1, `marketCap`]).
+- `cartSpeed`: velocidad del carrito de reparto (> 0).
+
 ## Texts
 `texts` son las etiquetas de UI en espanol (ASCII, sin acentos): `home`, `shop`,
-`workspace`, `residents`, `workers`, `shoppers`, `underConstruction`, `vacant`.
+`workspace`, `residents`, `workers`, `shoppers`, `underConstruction`, `vacant`, y las de
+economia (v2) `farm`, `warehouse`, `market`, `money`, `stock`, `noFunds`.
 
 ## Names
 `names` es una lista de >= 20 nombres propios unicos para bautizar a los residentes.
 
 ## Materials
 `materials` es la paleta de colores del arte voxel (`{ color: [r, g, b] }`, 0..255). Cubre
-pieles, pelos, ropa, colores de auto, cristal, ruedas, metal, lampara, tronco y hojas. Todo
-material referenciado por un prefab existe aca.
+pieles, pelos, ropa, colores de auto, cristal, ruedas, metal, lampara, tronco y hojas, mas
+los de economia (v2): `CROP` (verde de la mata), `FRUIT` (fruto) y `CART` (madera del
+carrito). Todo material referenciado por un prefab existe aca.
 
 ## Prefabs
 `prefabs` son modelos voxel chiquitos y cute, definidos por `size` y `cells`:
@@ -157,6 +209,8 @@ material referenciado por un prefab existe aca.
 - Gente: `person_a`..`person_d` (>= 4), cada una con ropa y pelo distintos.
 - Autos: `car_red`, `car_blue`, `car_green` (>= 3), de colores distintos.
 - Props: `streetlight` (farola) y `tree` (arbol).
+- Economia (v2): `crop` (mata de cultivo chiquita, verde con fruto) y `cart` (carrito de
+  reparto de madera con ruedas, distinto de los `car_*`).
 
 ## Structures
 `structures` coloca 1:1 cada prefab en `[0, 0, 0]`, con el MISMO nombre que el prefab, para

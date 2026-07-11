@@ -13,7 +13,7 @@ budget:
   max_cyclomatic_complexity: 10
   max_nesting_depth: 4
 tests: "tests/game/test_minitown_data.mjs"
-tests_sha256: "6a01fd92b43858b7cd2a3551c921faaf0c5735d57d92c925fe73db9b7f009a9a"
+tests_sha256: "a49a8e56bb550a3fe873ec671ba60658a9bc765d9773a7a977e33e2a8b4c8c4b"
 touch_only: ['game/GAME.md', 'game/profiles/minitown.js', 'game/game-data.generated.js']
 deps_allowed: []
 forbids: ['network']
@@ -38,8 +38,20 @@ def derive_minitown(data: dict) -> dict:
     STRUCTURES/VOXELS: KINDS, VARIANTS, STAGES, PALETTE, SCHEDULES, SIM, TEXTS,
     NAMES (claves y formas exactas abajo)."""
 ```
-Colecciones nuevas del front-matter de `game/GAME.md` (YAML subset de yaml-min):
-- `buildingKinds`: exactamente residential|shop|workspace; cada uno con
+v2 (economia): `buildingKinds` pasa a tener EXACTAMENTE los 6 kinds
+residential|shop|workspace|farm|warehouse|market (variantes >=3 para todos: farm
+verde/madera, warehouse gris/madera, market naranja/toldo); se agrega la coleccion
+`econ` -> clave derivada `ECON` con: `startingMoney` (entero, >= 3x el placementCost
+minimo), `placementCost` (mapa con exactamente los 6 kinds, enteros >= 1),
+`salePrice` > 0, `farmRatePerLevel` (3 numeros > 0 no decrecientes, unidades por hora
+de juego), `farmCap`/`warehouseCap`/`marketCap` (enteros >= cartLoad),
+`cartLoad` >= 1, `restockBelow` en [1, marketCap], `cartSpeed` > 0; prefabs voxel
+`crop` (mata de cultivo) y `cart` (carrito de reparto) con structures 1:1; TEXTS suma
+farm/warehouse/market/money/stock/noFunds; y regla `mt-econ` (error ante econ con
+rangos invalidos, p.ej. salePrice negativo).
+
+Colecciones del front-matter de `game/GAME.md` (YAML subset de yaml-min):
+- `buildingKinds`: los kinds listados arriba; cada uno con
   `capacityPerLevel` (3 enteros >=1 no decrecientes) y `heightPerLevel` (3 numeros > 0).
 - `buildingVariants`: por kind, lista de >=3 variantes `{body, roof, trim}` (rgb 0..255).
 - `stages`: foundation|frame|built con `durationSec` > 0.

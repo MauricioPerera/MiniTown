@@ -57,14 +57,15 @@
       }
   }
 
-  // mt-kinds: exactamente residential|shop|workspace; capacityPerLevel 3 enteros >=1 no
-  // decrecientes; heightPerLevel 3 numeros > 0.
+  // mt-kinds: exactamente los 6 kinds (residential|shop|workspace|farm|warehouse|market);
+  // capacityPerLevel 3 enteros >=1 no decrecientes; heightPerLevel 3 numeros > 0.
+  const KINDS6 = 'farm,market,residential,shop,warehouse,workspace';
   function ruleKinds({ data, add }) {
     if (!('buildingKinds' in data)) return;
     const kinds = data.buildingKinds || {};
     const got = Object.keys(kinds).sort().join(',');
-    if (got !== 'residential,shop,workspace')
-      add('error', 'mt-kinds', 'buildingKinds debe ser exactamente residential|shop|workspace, no: ' + got);
+    if (got !== KINDS6)
+      add('error', 'mt-kinds', 'buildingKinds debe ser exactamente los 6 kinds (' + KINDS6 + '), no: ' + got);
     for (const [k, spec] of Object.entries(kinds)) {
       const s = spec || {};
       if (!intsUp(s.capacityPerLevel, 1))
@@ -114,13 +115,47 @@
         add('error', 'mt-stages', 'stages.' + k + '.durationSec debe ser > 0: ' + (st || {}).durationSec);
   }
 
-  // mt-texts: todas las claves presentes, strings no vacios.
+  // mt-texts: todas las claves presentes, strings no vacios (v2 suma las de economia).
   function ruleTexts({ data, add }) {
     if (!('texts' in data)) return;
     const t = data.texts || {};
-    for (const k of ['home', 'shop', 'workspace', 'residents', 'workers', 'shoppers', 'underConstruction', 'vacant'])
+    for (const k of ['home', 'shop', 'workspace', 'residents', 'workers', 'shoppers', 'underConstruction', 'vacant',
+      'farm', 'warehouse', 'market', 'money', 'stock', 'noFunds'])
       if (!(typeof t[k] === 'string' && t[k].length > 0))
         add('error', 'mt-texts', 'texts.' + k + ' faltante o vacio');
+  }
+
+  // mt-econ (v2 economia): valida la coleccion `econ` cuando esta presente. Rangos exactos
+  // segun contrato: placementCost mapa con los 6 kinds enteros >=1; startingMoney entero
+  // >= 3x el minimo costo; salePrice > 0; farmRatePerLevel 3 numeros > 0 no decrecientes;
+  // cartLoad entero >=1; farmCap/warehouseCap/marketCap enteros >= cartLoad; restockBelow
+  // entero en [1, marketCap]; cartSpeed > 0.
+  const numGt0 = v => typeof v === 'number' && v > 0;
+  function ruleEcon({ data, add }) {
+    if (!('econ' in data)) return;
+    const e = data.econ || {};
+    const err = m => add('error', 'mt-econ', m);
+    const pc = e.placementCost;
+    const pcOk = pc && typeof pc === 'object' && Object.keys(pc).sort().join(',') === KINDS6;
+    if (!pcOk) err('econ.placementCost debe cubrir exactamente los 6 kinds (' + KINDS6 + '): ' + JSON.stringify(pc && Object.keys(pc)));
+    const costs = pcOk ? Object.values(pc) : [];
+    for (const [k, c] of Object.entries(pc || {}))
+      if (!(Number.isInteger(c) && c >= 1)) err('econ.placementCost.' + k + ' debe ser entero >= 1: ' + c);
+    const minCost = costs.length ? Math.min(...costs) : null;
+    if (!(Number.isInteger(e.startingMoney) && minCost != null && e.startingMoney >= 3 * minCost))
+      err('econ.startingMoney debe ser entero >= 3x el costo minimo (' + (minCost != null ? 3 * minCost : '?') + '): ' + e.startingMoney);
+    if (!numGt0(e.salePrice)) err('econ.salePrice debe ser numero > 0: ' + e.salePrice);
+    const fr = e.farmRatePerLevel;
+    if (!(Array.isArray(fr) && fr.length === 3 && fr.every(numGt0) && fr[1] >= fr[0] && fr[2] >= fr[1]))
+      err('econ.farmRatePerLevel debe ser 3 numeros > 0 no decrecientes: ' + JSON.stringify(fr));
+    if (!(Number.isInteger(e.cartLoad) && e.cartLoad >= 1)) err('econ.cartLoad debe ser entero >= 1: ' + e.cartLoad);
+    const load = Number.isInteger(e.cartLoad) ? e.cartLoad : 1;
+    for (const k of ['farmCap', 'warehouseCap', 'marketCap'])
+      if (!(Number.isInteger(e[k]) && e[k] >= load)) err('econ.' + k + ' debe ser entero >= cartLoad (' + load + '): ' + e[k]);
+    const cap = Number.isInteger(e.marketCap) ? e.marketCap : Infinity;
+    if (!(Number.isInteger(e.restockBelow) && e.restockBelow >= 1 && e.restockBelow <= cap))
+      err('econ.restockBelow debe ser entero en [1, marketCap]: ' + e.restockBelow);
+    if (!numGt0(e.cartSpeed)) err('econ.cartSpeed debe ser numero > 0: ' + e.cartSpeed);
   }
 
   // mt-names: >=20 nombres unicos.
@@ -140,6 +175,7 @@
     { key: 'SIM', from: 'sim' },
     { key: 'TEXTS', from: 'texts' },
     { key: 'NAMES', from: 'names', default: [] },
+    { key: 'ECON', from: 'econ' },
   ];
 
   return {
@@ -147,7 +183,7 @@
     specVersion: '0.1',
     sections: [
       'Overview', 'Building Kinds', 'Building Variants', 'Stages', 'Palette',
-      'Schedules', 'Sim', 'Texts', 'Names', 'Materials', 'Prefabs', 'Structures',
+      'Schedules', 'Sim', 'Econ', 'Texts', 'Names', 'Materials', 'Prefabs', 'Structures',
       "Do's and Don'ts",
     ],
     required: ['version', 'name', 'profile'],
@@ -156,7 +192,7 @@
     // Reutiliza las reglas voxel (materiales, prefabs, estructuras) y agrega las de MiniTown.
     rules: (voxel.rules || []).concat([
       ruleScheduleOrder, ruleVariantColor, ruleScheduleRange, ruleKinds,
-      rulePalette, ruleSim, ruleStages, ruleTexts, ruleNames,
+      rulePalette, ruleSim, ruleStages, ruleTexts, ruleNames, ruleEcon,
     ]),
     // Reutiliza el derive voxel (MATERIALS/PREFABS/STRUCTURES/VOXELS) y agrega las colecciones sim.
     derive: (voxel.derive || []).concat(mtDerive),
