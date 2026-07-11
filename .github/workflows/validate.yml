@@ -1,0 +1,64 @@
+name: validate-contracts
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  validate:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Validate contracts
+        run: python scripts/validate_contracts.py knowledge/contracts
+
+      - name: "Validate specs contracts"
+        run: python scripts/validate_specs.py specs
+
+      - name: Validate OKF nodes
+        run: python scripts/validate_okf.py knowledge
+
+      - name: Lint ASCII scripts
+        run: python scripts/lint_ascii.py scripts
+
+      - name: Validate rule contracts
+        run: python scripts/validate_rules.py examples/rules
+
+      - name: Validate agent skills
+        run: python scripts/validate_skills.py skills .agents/skills
+
+      - name: Validate changelog coherence
+        run: python scripts/validate_changelog.py
+
+      - name: Validate UX/accessibility (HTML pages)
+        run: python scripts/validate_ux_page.py examples/ux-page
+
+      - name: Run unit tests (1/2)
+        run: python -m unittest discover -s tests -p "test_*.py"
+
+      - name: Run unit tests (2/2)
+        run: python -m unittest discover -s tests -p "test_*.py"
+
+      - name: Run project test suite
+        # This step is separate from the two above on purpose: those validate the KDD
+        # tooling itself (scripts/*.py) and stay Python forever, regardless of your
+        # project's language. THIS step is a placeholder for YOUR project's own tests.
+        # Swap the command below for your language's runner (e.g. `npm test`,
+        # `cargo test`, `go test ./...`) once your project has its own tests; add
+        # `actions/setup-node`/`actions/setup-go`/etc. above if your runtime needs setup.
+        # Left as the same Python command by default so a clean fork of the template
+        # stays green without editing anything.
+        run: python -m unittest discover -s tests -p "test_*.py"
+
+      - name: Assemble context (smoke)
+        run: python scripts/assemble_context.py ccdd/context.json "smoke"
