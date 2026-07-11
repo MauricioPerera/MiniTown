@@ -1,0 +1,1319 @@
+// AUTO-GENERADO por tools/game-export.js desde GAME.md — NO EDITAR A MANO.
+// Regenerar con:  node tools/game-export.js
+// profile: minitown
+window.GAME = {
+  "generatedFrom": "GAME.md",
+  "profile": "minitown",
+  "name": "MiniTown",
+  "description": null,
+  "platform": {},
+  "palettesCount": 0,
+  "MATERIALS": {
+    "SKIN": {
+      "color": [
+        240,
+        200,
+        170
+      ]
+    },
+    "SKIN2": {
+      "color": [
+        200,
+        150,
+        120
+      ]
+    },
+    "HAIR_BROWN": {
+      "color": [
+        90,
+        60,
+        40
+      ]
+    },
+    "HAIR_BLACK": {
+      "color": [
+        30,
+        30,
+        35
+      ]
+    },
+    "HAIR_BLONDE": {
+      "color": [
+        220,
+        190,
+        120
+      ]
+    },
+    "HAIR_RED": {
+      "color": [
+        170,
+        70,
+        40
+      ]
+    },
+    "SHIRT_RED": {
+      "color": [
+        210,
+        80,
+        80
+      ]
+    },
+    "SHIRT_BLUE": {
+      "color": [
+        80,
+        120,
+        200
+      ]
+    },
+    "SHIRT_GREEN": {
+      "color": [
+        90,
+        170,
+        110
+      ]
+    },
+    "SHIRT_YELLOW": {
+      "color": [
+        230,
+        200,
+        90
+      ]
+    },
+    "PANTS_DARK": {
+      "color": [
+        60,
+        60,
+        70
+      ]
+    },
+    "PANTS_BLUE": {
+      "color": [
+        70,
+        90,
+        140
+      ]
+    },
+    "CAR_RED": {
+      "color": [
+        200,
+        60,
+        60
+      ]
+    },
+    "CAR_BLUE": {
+      "color": [
+        70,
+        110,
+        190
+      ]
+    },
+    "CAR_GREEN": {
+      "color": [
+        80,
+        160,
+        100
+      ]
+    },
+    "GLASS": {
+      "color": [
+        150,
+        200,
+        230
+      ]
+    },
+    "WHEEL": {
+      "color": [
+        40,
+        40,
+        45
+      ]
+    },
+    "METAL": {
+      "color": [
+        130,
+        130,
+        140
+      ]
+    },
+    "LAMP": {
+      "color": [
+        255,
+        230,
+        150
+      ]
+    },
+    "TRUNK": {
+      "color": [
+        120,
+        80,
+        50
+      ]
+    },
+    "LEAF": {
+      "color": [
+        90,
+        160,
+        90
+      ]
+    }
+  },
+  "PREFABS": {
+    "person_a": {
+      "size": [
+        1,
+        4,
+        1
+      ],
+      "cells": [
+        {
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "m": "PANTS_DARK"
+        },
+        {
+          "x": 0,
+          "y": 1,
+          "z": 0,
+          "m": "SHIRT_RED"
+        },
+        {
+          "x": 0,
+          "y": 2,
+          "z": 0,
+          "m": "SKIN"
+        },
+        {
+          "x": 0,
+          "y": 3,
+          "z": 0,
+          "m": "HAIR_BROWN"
+        }
+      ]
+    },
+    "person_b": {
+      "size": [
+        1,
+        4,
+        1
+      ],
+      "cells": [
+        {
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "m": "PANTS_BLUE"
+        },
+        {
+          "x": 0,
+          "y": 1,
+          "z": 0,
+          "m": "SHIRT_BLUE"
+        },
+        {
+          "x": 0,
+          "y": 2,
+          "z": 0,
+          "m": "SKIN2"
+        },
+        {
+          "x": 0,
+          "y": 3,
+          "z": 0,
+          "m": "HAIR_BLACK"
+        }
+      ]
+    },
+    "person_c": {
+      "size": [
+        1,
+        4,
+        1
+      ],
+      "cells": [
+        {
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "m": "PANTS_DARK"
+        },
+        {
+          "x": 0,
+          "y": 1,
+          "z": 0,
+          "m": "SHIRT_GREEN"
+        },
+        {
+          "x": 0,
+          "y": 2,
+          "z": 0,
+          "m": "SKIN"
+        },
+        {
+          "x": 0,
+          "y": 3,
+          "z": 0,
+          "m": "HAIR_BLONDE"
+        }
+      ]
+    },
+    "person_d": {
+      "size": [
+        1,
+        4,
+        1
+      ],
+      "cells": [
+        {
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "m": "PANTS_BLUE"
+        },
+        {
+          "x": 0,
+          "y": 1,
+          "z": 0,
+          "m": "SHIRT_YELLOW"
+        },
+        {
+          "x": 0,
+          "y": 2,
+          "z": 0,
+          "m": "SKIN2"
+        },
+        {
+          "x": 0,
+          "y": 3,
+          "z": 0,
+          "m": "HAIR_RED"
+        }
+      ]
+    },
+    "car_red": {
+      "size": [
+        3,
+        2,
+        1
+      ],
+      "cells": [
+        {
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "m": "WHEEL"
+        },
+        {
+          "x": 1,
+          "y": 0,
+          "z": 0,
+          "m": "CAR_RED"
+        },
+        {
+          "x": 2,
+          "y": 0,
+          "z": 0,
+          "m": "WHEEL"
+        },
+        {
+          "x": 0,
+          "y": 1,
+          "z": 0,
+          "m": "CAR_RED"
+        },
+        {
+          "x": 1,
+          "y": 1,
+          "z": 0,
+          "m": "GLASS"
+        },
+        {
+          "x": 2,
+          "y": 1,
+          "z": 0,
+          "m": "CAR_RED"
+        }
+      ]
+    },
+    "car_blue": {
+      "size": [
+        3,
+        2,
+        1
+      ],
+      "cells": [
+        {
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "m": "WHEEL"
+        },
+        {
+          "x": 1,
+          "y": 0,
+          "z": 0,
+          "m": "CAR_BLUE"
+        },
+        {
+          "x": 2,
+          "y": 0,
+          "z": 0,
+          "m": "WHEEL"
+        },
+        {
+          "x": 0,
+          "y": 1,
+          "z": 0,
+          "m": "CAR_BLUE"
+        },
+        {
+          "x": 1,
+          "y": 1,
+          "z": 0,
+          "m": "GLASS"
+        },
+        {
+          "x": 2,
+          "y": 1,
+          "z": 0,
+          "m": "CAR_BLUE"
+        }
+      ]
+    },
+    "car_green": {
+      "size": [
+        3,
+        2,
+        1
+      ],
+      "cells": [
+        {
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "m": "WHEEL"
+        },
+        {
+          "x": 1,
+          "y": 0,
+          "z": 0,
+          "m": "CAR_GREEN"
+        },
+        {
+          "x": 2,
+          "y": 0,
+          "z": 0,
+          "m": "WHEEL"
+        },
+        {
+          "x": 0,
+          "y": 1,
+          "z": 0,
+          "m": "CAR_GREEN"
+        },
+        {
+          "x": 1,
+          "y": 1,
+          "z": 0,
+          "m": "GLASS"
+        },
+        {
+          "x": 2,
+          "y": 1,
+          "z": 0,
+          "m": "CAR_GREEN"
+        }
+      ]
+    },
+    "streetlight": {
+      "size": [
+        1,
+        3,
+        1
+      ],
+      "cells": [
+        {
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "m": "METAL"
+        },
+        {
+          "x": 0,
+          "y": 1,
+          "z": 0,
+          "m": "METAL"
+        },
+        {
+          "x": 0,
+          "y": 2,
+          "z": 0,
+          "m": "LAMP"
+        }
+      ]
+    },
+    "tree": {
+      "size": [
+        3,
+        3,
+        1
+      ],
+      "cells": [
+        {
+          "x": 1,
+          "y": 0,
+          "z": 0,
+          "m": "TRUNK"
+        },
+        {
+          "x": 1,
+          "y": 1,
+          "z": 0,
+          "m": "TRUNK"
+        },
+        {
+          "x": 0,
+          "y": 2,
+          "z": 0,
+          "m": "LEAF"
+        },
+        {
+          "x": 1,
+          "y": 2,
+          "z": 0,
+          "m": "LEAF"
+        },
+        {
+          "x": 2,
+          "y": 2,
+          "z": 0,
+          "m": "LEAF"
+        }
+      ]
+    }
+  },
+  "STRUCTURES": {
+    "person_a": {
+      "place": [
+        {
+          "prefab": "person_a",
+          "at": [
+            0,
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    "person_b": {
+      "place": [
+        {
+          "prefab": "person_b",
+          "at": [
+            0,
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    "person_c": {
+      "place": [
+        {
+          "prefab": "person_c",
+          "at": [
+            0,
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    "person_d": {
+      "place": [
+        {
+          "prefab": "person_d",
+          "at": [
+            0,
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    "car_red": {
+      "place": [
+        {
+          "prefab": "car_red",
+          "at": [
+            0,
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    "car_blue": {
+      "place": [
+        {
+          "prefab": "car_blue",
+          "at": [
+            0,
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    "car_green": {
+      "place": [
+        {
+          "prefab": "car_green",
+          "at": [
+            0,
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    "streetlight": {
+      "place": [
+        {
+          "prefab": "streetlight",
+          "at": [
+            0,
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    "tree": {
+      "place": [
+        {
+          "prefab": "tree",
+          "at": [
+            0,
+            0,
+            0
+          ]
+        }
+      ]
+    }
+  },
+  "VOXELS": {
+    "person_a": {
+      "count": 4,
+      "bounds": {
+        "min": [
+          0,
+          0,
+          0
+        ],
+        "max": [
+          0,
+          3,
+          0
+        ]
+      },
+      "voxels": [
+        {
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "m": "PANTS_DARK"
+        },
+        {
+          "x": 0,
+          "y": 1,
+          "z": 0,
+          "m": "SHIRT_RED"
+        },
+        {
+          "x": 0,
+          "y": 2,
+          "z": 0,
+          "m": "SKIN"
+        },
+        {
+          "x": 0,
+          "y": 3,
+          "z": 0,
+          "m": "HAIR_BROWN"
+        }
+      ]
+    },
+    "person_b": {
+      "count": 4,
+      "bounds": {
+        "min": [
+          0,
+          0,
+          0
+        ],
+        "max": [
+          0,
+          3,
+          0
+        ]
+      },
+      "voxels": [
+        {
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "m": "PANTS_BLUE"
+        },
+        {
+          "x": 0,
+          "y": 1,
+          "z": 0,
+          "m": "SHIRT_BLUE"
+        },
+        {
+          "x": 0,
+          "y": 2,
+          "z": 0,
+          "m": "SKIN2"
+        },
+        {
+          "x": 0,
+          "y": 3,
+          "z": 0,
+          "m": "HAIR_BLACK"
+        }
+      ]
+    },
+    "person_c": {
+      "count": 4,
+      "bounds": {
+        "min": [
+          0,
+          0,
+          0
+        ],
+        "max": [
+          0,
+          3,
+          0
+        ]
+      },
+      "voxels": [
+        {
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "m": "PANTS_DARK"
+        },
+        {
+          "x": 0,
+          "y": 1,
+          "z": 0,
+          "m": "SHIRT_GREEN"
+        },
+        {
+          "x": 0,
+          "y": 2,
+          "z": 0,
+          "m": "SKIN"
+        },
+        {
+          "x": 0,
+          "y": 3,
+          "z": 0,
+          "m": "HAIR_BLONDE"
+        }
+      ]
+    },
+    "person_d": {
+      "count": 4,
+      "bounds": {
+        "min": [
+          0,
+          0,
+          0
+        ],
+        "max": [
+          0,
+          3,
+          0
+        ]
+      },
+      "voxels": [
+        {
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "m": "PANTS_BLUE"
+        },
+        {
+          "x": 0,
+          "y": 1,
+          "z": 0,
+          "m": "SHIRT_YELLOW"
+        },
+        {
+          "x": 0,
+          "y": 2,
+          "z": 0,
+          "m": "SKIN2"
+        },
+        {
+          "x": 0,
+          "y": 3,
+          "z": 0,
+          "m": "HAIR_RED"
+        }
+      ]
+    },
+    "car_red": {
+      "count": 6,
+      "bounds": {
+        "min": [
+          0,
+          0,
+          0
+        ],
+        "max": [
+          2,
+          1,
+          0
+        ]
+      },
+      "voxels": [
+        {
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "m": "WHEEL"
+        },
+        {
+          "x": 1,
+          "y": 0,
+          "z": 0,
+          "m": "CAR_RED"
+        },
+        {
+          "x": 2,
+          "y": 0,
+          "z": 0,
+          "m": "WHEEL"
+        },
+        {
+          "x": 0,
+          "y": 1,
+          "z": 0,
+          "m": "CAR_RED"
+        },
+        {
+          "x": 1,
+          "y": 1,
+          "z": 0,
+          "m": "GLASS"
+        },
+        {
+          "x": 2,
+          "y": 1,
+          "z": 0,
+          "m": "CAR_RED"
+        }
+      ]
+    },
+    "car_blue": {
+      "count": 6,
+      "bounds": {
+        "min": [
+          0,
+          0,
+          0
+        ],
+        "max": [
+          2,
+          1,
+          0
+        ]
+      },
+      "voxels": [
+        {
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "m": "WHEEL"
+        },
+        {
+          "x": 1,
+          "y": 0,
+          "z": 0,
+          "m": "CAR_BLUE"
+        },
+        {
+          "x": 2,
+          "y": 0,
+          "z": 0,
+          "m": "WHEEL"
+        },
+        {
+          "x": 0,
+          "y": 1,
+          "z": 0,
+          "m": "CAR_BLUE"
+        },
+        {
+          "x": 1,
+          "y": 1,
+          "z": 0,
+          "m": "GLASS"
+        },
+        {
+          "x": 2,
+          "y": 1,
+          "z": 0,
+          "m": "CAR_BLUE"
+        }
+      ]
+    },
+    "car_green": {
+      "count": 6,
+      "bounds": {
+        "min": [
+          0,
+          0,
+          0
+        ],
+        "max": [
+          2,
+          1,
+          0
+        ]
+      },
+      "voxels": [
+        {
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "m": "WHEEL"
+        },
+        {
+          "x": 1,
+          "y": 0,
+          "z": 0,
+          "m": "CAR_GREEN"
+        },
+        {
+          "x": 2,
+          "y": 0,
+          "z": 0,
+          "m": "WHEEL"
+        },
+        {
+          "x": 0,
+          "y": 1,
+          "z": 0,
+          "m": "CAR_GREEN"
+        },
+        {
+          "x": 1,
+          "y": 1,
+          "z": 0,
+          "m": "GLASS"
+        },
+        {
+          "x": 2,
+          "y": 1,
+          "z": 0,
+          "m": "CAR_GREEN"
+        }
+      ]
+    },
+    "streetlight": {
+      "count": 3,
+      "bounds": {
+        "min": [
+          0,
+          0,
+          0
+        ],
+        "max": [
+          0,
+          2,
+          0
+        ]
+      },
+      "voxels": [
+        {
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "m": "METAL"
+        },
+        {
+          "x": 0,
+          "y": 1,
+          "z": 0,
+          "m": "METAL"
+        },
+        {
+          "x": 0,
+          "y": 2,
+          "z": 0,
+          "m": "LAMP"
+        }
+      ]
+    },
+    "tree": {
+      "count": 5,
+      "bounds": {
+        "min": [
+          0,
+          0,
+          0
+        ],
+        "max": [
+          2,
+          2,
+          0
+        ]
+      },
+      "voxels": [
+        {
+          "x": 1,
+          "y": 0,
+          "z": 0,
+          "m": "TRUNK"
+        },
+        {
+          "x": 1,
+          "y": 1,
+          "z": 0,
+          "m": "TRUNK"
+        },
+        {
+          "x": 0,
+          "y": 2,
+          "z": 0,
+          "m": "LEAF"
+        },
+        {
+          "x": 1,
+          "y": 2,
+          "z": 0,
+          "m": "LEAF"
+        },
+        {
+          "x": 2,
+          "y": 2,
+          "z": 0,
+          "m": "LEAF"
+        }
+      ]
+    }
+  },
+  "KINDS": {
+    "residential": {
+      "capacityPerLevel": [
+        2,
+        4,
+        6
+      ],
+      "heightPerLevel": [
+        2,
+        4,
+        6
+      ]
+    },
+    "shop": {
+      "capacityPerLevel": [
+        3,
+        5,
+        8
+      ],
+      "heightPerLevel": [
+        2,
+        3,
+        5
+      ]
+    },
+    "workspace": {
+      "capacityPerLevel": [
+        4,
+        8,
+        12
+      ],
+      "heightPerLevel": [
+        3,
+        5,
+        7
+      ]
+    }
+  },
+  "VARIANTS": {
+    "residential": [
+      {
+        "body": [
+          214,
+          132,
+          92
+        ],
+        "roof": [
+          150,
+          66,
+          48
+        ],
+        "trim": [
+          245,
+          226,
+          200
+        ]
+      },
+      {
+        "body": [
+          230,
+          168,
+          110
+        ],
+        "roof": [
+          166,
+          84,
+          54
+        ],
+        "trim": [
+          250,
+          235,
+          210
+        ]
+      },
+      {
+        "body": [
+          198,
+          110,
+          74
+        ],
+        "roof": [
+          130,
+          58,
+          44
+        ],
+        "trim": [
+          240,
+          214,
+          184
+        ]
+      }
+    ],
+    "shop": [
+      {
+        "body": [
+          206,
+          74,
+          118
+        ],
+        "roof": [
+          150,
+          40,
+          80
+        ],
+        "trim": [
+          255,
+          232,
+          214
+        ]
+      },
+      {
+        "body": [
+          224,
+          96,
+          140
+        ],
+        "roof": [
+          168,
+          52,
+          96
+        ],
+        "trim": [
+          255,
+          240,
+          224
+        ]
+      },
+      {
+        "body": [
+          188,
+          58,
+          100
+        ],
+        "roof": [
+          132,
+          34,
+          70
+        ],
+        "trim": [
+          250,
+          224,
+          206
+        ]
+      }
+    ],
+    "workspace": [
+      {
+        "body": [
+          86,
+          118,
+          168
+        ],
+        "roof": [
+          54,
+          78,
+          120
+        ],
+        "trim": [
+          214,
+          226,
+          240
+        ]
+      },
+      {
+        "body": [
+          102,
+          134,
+          182
+        ],
+        "roof": [
+          64,
+          90,
+          132
+        ],
+        "trim": [
+          224,
+          234,
+          246
+        ]
+      },
+      {
+        "body": [
+          70,
+          100,
+          148
+        ],
+        "roof": [
+          44,
+          66,
+          104
+        ],
+        "trim": [
+          204,
+          218,
+          236
+        ]
+      }
+    ]
+  },
+  "STAGES": {
+    "foundation": {
+      "durationSec": 4
+    },
+    "frame": {
+      "durationSec": 6
+    },
+    "built": {
+      "durationSec": 8
+    }
+  },
+  "PALETTE": {
+    "skyDay": [
+      150,
+      200,
+      240
+    ],
+    "skyNight": [
+      30,
+      40,
+      90
+    ],
+    "groundDay": [
+      120,
+      170,
+      110
+    ],
+    "groundNight": [
+      40,
+      55,
+      70
+    ],
+    "windowGlowMax": 0.9,
+    "streetlightMax": 0.8
+  },
+  "SCHEDULES": {
+    "worker": {
+      "wake": 7,
+      "workStart": 9,
+      "workEnd": 17,
+      "sleep": 23
+    },
+    "shopkeeper": {
+      "wake": 6,
+      "workStart": 8,
+      "workEnd": 18,
+      "sleep": 22
+    },
+    "earlybird": {
+      "wake": 5,
+      "workStart": 7,
+      "workEnd": 15,
+      "sleep": 21
+    }
+  },
+  "SIM": {
+    "dayLengthSec": 120,
+    "walkSpeed": 1.2,
+    "carSpeed": 4,
+    "residentsPerHouseLevel": [
+      2,
+      4,
+      6
+    ],
+    "jobsPerWorkspaceLevel": [
+      4,
+      8,
+      12
+    ]
+  },
+  "TEXTS": {
+    "home": "Casa",
+    "shop": "Tienda",
+    "workspace": "Taller",
+    "residents": "Residentes",
+    "workers": "Trabajadores",
+    "shoppers": "Clientes",
+    "underConstruction": "En construccion",
+    "vacant": "Vacante"
+  },
+  "NAMES": [
+    "Ana",
+    "Beto",
+    "Carla",
+    "Diego",
+    "Elena",
+    "Fabio",
+    "Gina",
+    "Hugo",
+    "Iris",
+    "Juan",
+    "Kevin",
+    "Lucia",
+    "Marco",
+    "Nadia",
+    "Omar",
+    "Paula",
+    "Quique",
+    "Rosa",
+    "Sergio",
+    "Tania",
+    "Ulises",
+    "Vera",
+    "Willy",
+    "Ximena",
+    "Yago",
+    "Zoe"
+  ]
+};
