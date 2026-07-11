@@ -211,8 +211,10 @@ export function createAgents({ seed }) {
 
 export function syncAgents(ag, town, game) {
   const homes = town.buildings.filter(b => b.kind === 'residential' && b.occupied);
-  const works = town.buildings.filter(b => b.kind === 'workspace' && b.occupied);
-  const shops = town.buildings.filter(b => b.kind === 'shop' && b.occupied);
+  const WORK_KINDS = { workspace: true, farm: true, warehouse: true, market: true };
+  const SHOP_KINDS = { shop: true, market: true };
+  const works = town.buildings.filter(b => WORK_KINDS[b.kind] && b.occupied);
+  const shops = town.buildings.filter(b => SHOP_KINDS[b.kind] && b.occupied);
   for (const home of homes) {
     const existing = ag.residents.filter(r => r.homeId === home.id).length;
     for (let k = existing; k < home.capacity; k++) spawnResident(ag, town, game, home, works, shops);
