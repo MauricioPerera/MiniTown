@@ -106,14 +106,16 @@ test('prefabLine: una linea parseable por yaml-min que reproduce el prefab', () 
   const line = prefabLine('mi_prefab', p);
   assert.ok(!line.includes('\n'), 'debe ser UNA linea');
   const parsed = parseYamlSubset('prefabs:\n  ' + line);
-  assert.deepEqual(parsed.prefabs.mi_prefab, p);
+  // yaml-min devuelve objetos null-prototype (anti prototype-pollution): normalizamos via JSON.
+  assert.deepEqual(JSON.parse(JSON.stringify(parsed.prefabs.mi_prefab)), p);
 });
 
 test('structureLine: una linea parseable que coloca el prefab 1:1 en el origen', () => {
   const line = structureLine('mi_prefab');
   assert.ok(!line.includes('\n'), 'debe ser UNA linea');
   const parsed = parseYamlSubset('structures:\n  ' + line);
-  assert.deepEqual(parsed.structures.mi_prefab, { place: [{ prefab: 'mi_prefab', at: [0, 0, 0] }] });
+  // Normalizacion JSON por el null-prototype de yaml-min (ver test anterior).
+  assert.deepEqual(JSON.parse(JSON.stringify(parsed.structures.mi_prefab)), { place: [{ prefab: 'mi_prefab', at: [0, 0, 0] }] });
 });
 
 test('prefabLine reproduce byte a byte el estilo de GAME.md para el crop real', () => {

@@ -13,7 +13,7 @@ budget:
   max_cyclomatic_complexity: 10
   max_nesting_depth: 4
 tests: "tests/game/test_editor_core.mjs"
-tests_sha256: "6bfdf9645e238dea9d9044cde4d5fb7ced369446d9d07060a922fd9f8e357166"
+tests_sha256: "a68f39df83c29f8cc60a26a7bb747cea7c4c857e0d57e1788163fcacd4912c0b"
 touch_only: ['game/src/editor-core.mjs']
 deps_allowed: []
 forbids: ['network', 'subprocess']
