@@ -1152,6 +1152,10 @@ export function start(opts = {}) {
 
   // ---- Persistencia: autosave en localStorage (todo en try/catch) ----------
   // Guardar nunca puede tirar el juego: cuota/modo privado se tragan silenciosos.
+  // `resetting`: al borrar el save (Nueva partida) el reload dispara beforeunload;
+  // sin este guard, ese save() final reescribiria el pueblo viejo DESPUES del
+  // clearSave y el reset nunca tomaria efecto.
+  let resetting = false;
   function save() {
     try {
       localStorage.setItem(SAVE_KEY, JSON.stringify(serializeState({ town, ag, eco })));
@@ -1159,21 +1163,22 @@ export function start(opts = {}) {
     } catch (_e) { return false; }
   }
   function clearSave() {
+    resetting = true;
     try { localStorage.removeItem(SAVE_KEY); } catch (_e) { /* noop */ }
   }
   // Autosave periodico (~10 s) con aviso breve; ademas al ocultar/cerrar la pestana.
   setInterval(() => { if (save()) showNotice(GAME.TEXTS.saved); }, 10000);
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') save();
+    if (document.visibilityState === 'hidden' && !resetting) save();
   });
-  window.addEventListener('beforeunload', () => { save(); });
+  window.addEventListener('beforeunload', () => { if (!resetting) save(); });
 
   // Boton "Nueva partida": confirm nativo -> borra el save y reinicia limpio.
   const newGameBtn = opts.newGameBtn || document.getElementById('newGame');
   if (newGameBtn) {
     newGameBtn.textContent = GAME.TEXTS.newGame;
     newGameBtn.addEventListener('click', () => {
-      if (window.confirm(GAME.TEXTS.newGame + '?')) { clearSave(); location.reload(); }
+      if (window.confirm(GAME.TEXTS.newGame + '?')) { resetting = true; clearSave(); location.reload(); }
     });
   }
 
