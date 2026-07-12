@@ -549,11 +549,12 @@ export function start(opts = {}) {
       inst.position.set(ox, 0, oz);
       g.add(inst);
     } else {
-      buildProceduralBody(b, v, g, ox, oz, isFarm);
+      buildProceduralBody(b, v, g, ox, oz);
     }
   }
 
-  function buildProceduralBody(b, v, g, ox, oz, isFarm) {
+  function buildProceduralBody(b, v, g, ox, oz) {
+    const isFarm = b.kind === 'farm';
     const bw = isFarm ? 0.9 : b.w * 0.88, bd = isFarm ? 0.9 : b.h * 0.88;
     const rw = isFarm ? 0.98 : b.w * 0.96, rd = isFarm ? 0.98 : b.h * 0.96;
     const ww = isFarm ? 0.92 : b.w * 0.9, wd = isFarm ? 0.92 : b.h * 0.9;
