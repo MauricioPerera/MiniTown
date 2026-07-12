@@ -47,6 +47,8 @@ node game/tools/game-export.js game/GAME.md game/game-data.generated.js   # rege
 
 Cambiar el balance del juego (¿días más largos? ¿más residentes por casa? ¿otra paleta?) es editar YAML, no tocar código.
 
+Los **edificios también son dato**: la colección `buildingModels` de `GAME.md` define, por kind y por nivel, modelos voxel con estilo (structures) que el motor elige de forma determinista y dibuja escalados al lote — hoy vienen dos estilos residenciales (`terracota` y `nordica`), y si un kind no trae modelos cae al edificio procedural intacto. Para modelar los tuyos sin escribir YAML a mano está el **editor voxel** integrado ([`game/voxel-editor.html`](game/voxel-editor.html)): paleta desde los materiales del juego, importás prefabs y exportás las líneas listas para pegar. Cómo generar edificios y props paso a paso: [`docs/generar-elementos.md`](docs/generar-elementos.md).
+
 Los datos están **sellados** (`dataSha256` en el frontmatter, game-protocol ≥ v2.19): el lint detecta cualquier edición no re-sellada. Tras un cambio legítimo: `node game/tools/game-seal.js game/GAME.md` y actualizar el token.
 
 ## Estructura
@@ -60,6 +62,8 @@ Los datos están **sellados** (`dataSha256` en el frontmatter, game-protocol ≥
 | [`game/src/render-core.mjs`](game/src/render-core.mjs) | Lógica de presentación pura: paleta día/noche, visual de edificios, cámara. |
 | [`game/src/render.mjs`](game/src/render.mjs) | Escena Three.js: instancias voxel, luces, hover, HUD. |
 | [`game/GAME.md`](game/GAME.md) + [`game/profiles/minitown.js`](game/profiles/minitown.js) | Datos + perfil de validación. |
+| [`game/voxel-editor.html`](game/voxel-editor.html) | Editor voxel 3D: modelás con los materiales del juego y exportás líneas YAML listas para GAME.md. |
+| [`game/src/editor-core.mjs`](game/src/editor-core.mjs) | Núcleo puro del editor: mapa de celdas, normalización e import/export de prefabs. |
 | [`game/concepts/`](game/concepts/) | Conceptos visuales previos al desarrollo (página interactiva). |
 | [`knowledge/contracts/`](knowledge/contracts/) | Contratos de tarea con tests congelados sellados por hash. |
 | [`docs/screenshots/`](docs/screenshots/) · [`docs/concepts/`](docs/concepts/) | Capturas del juego y de los conceptos. |
