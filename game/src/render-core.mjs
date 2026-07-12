@@ -69,8 +69,16 @@ export function moverVisual(game, type, id) {
   return keys[idx];
 }
 
-// Stub Capa 0 (contrato minitown-render-voxel-buildings): implementacion pendiente.
-export function voxelBuildingScale(bounds, w, d, height) { return null; }
+// Escala UNIFORME para dibujar un modelo voxel de edificio dentro de su footprint.
+// bounds = { min:[x,y,z], max:[x,y,z] } o null. Dimensiones del modelo: m = max-min+1 por eje.
+// Pura, nunca lanza: bounds null => 0.
+export function voxelBuildingScale(bounds, w, d, height) {
+  if (!bounds) return 0;
+  const mw = bounds.max[0] - bounds.min[0] + 1;
+  const mh = bounds.max[1] - bounds.min[1] + 1;
+  const md = bounds.max[2] - bounds.min[2] + 1;
+  return Math.min(w * 0.9 / mw, d * 0.9 / md, height / mh);
+}
 
 export function cameraFrame(town) {
   const target = [town.w / 2, 0, town.h / 2];
