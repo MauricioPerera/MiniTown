@@ -5,15 +5,18 @@
 // Clave canonica "x,y,z" de una celda.
 function key(x, y, z) { return x + ',' + y + ',' + z; }
 
+// Rellena grid con `fill` en cada celda del volumen w*h*d (muta y devuelve grid).
+function fillGrid(grid, w, h, d, fill) {
+  for (let x = 0; x < w; x++)
+    for (let y = 0; y < h; y++)
+      for (let z = 0; z < d; z++) grid[key(x, y, z)] = fill;
+  return grid;
+}
+
 // Expande fill (si existe) a todo el size y aplica cells como override (semantica del perfil voxel).
 export function fromPrefab(prefab) {
   const [w, h, d] = prefab.size || [0, 0, 0];
-  const grid = {};
-  if (prefab.fill) {
-    for (let x = 0; x < w; x++)
-      for (let y = 0; y < h; y++)
-        for (let z = 0; z < d; z++) grid[key(x, y, z)] = prefab.fill;
-  }
+  const grid = prefab.fill ? fillGrid({}, w, h, d, prefab.fill) : {};
   for (const c of (prefab.cells || [])) grid[key(c.x, c.y, c.z)] = c.m; // overrides
   return grid;
 }
