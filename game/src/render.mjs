@@ -9,6 +9,7 @@ import { createEconomy, tickEconomy, cartsInTransit } from './economy.mjs';
 import { paletteAt, buildingVisual, moverVisual, cameraFrame } from './render-core.mjs';
 import { dragToAnchors } from './input-core.mjs';
 import { serializeState, restoreState } from './save-core.mjs';
+import { ambientMix, chimeFor } from './audio-core.mjs';
 
 // Clave del autosave en localStorage (persistencia del pueblo entre sesiones).
 const SAVE_KEY = 'minitown-save-v1';
@@ -71,6 +72,227 @@ function buildCropSlots() {
 }
 const CROP_SLOTS = buildCropSlots();
 
+// --------------------------------------------------------------------------
+// Audio cozy: motor WebAudio 100% sintetizado (sin assets, sin libs). Consume el
+// nucleo puro audio-core (ambientMix/chimeFor) para la mezcla dia/noche y las notas.
+// AudioContext SOLO tras el primer gesto (politica de autoplay); toggle persistido en
+// localStorage 'minitown-sound'. Ver knowledge/contracts/minitown-audio.md.
+const SOUND_KEY = 'minitown-sound';
+
+// PRNG determinista (mismo mulberry32 que agents.mjs) para intervalos de pajaros/grillos
+// y para el ruido de viento — audio reproducible, sin Math.random.
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function createAudioEngine(GAME, town, eco, soundBtn) {
+  const AUDIO = GAME.AUDIO || null;
+  const AC = typeof AudioContext !== 'undefined' ? AudioContext
+    : (typeof webkitAudioContext !== 'undefined' ? webkitAudioContext : null);
+  const rng = mulberry32(0xA0D10 ^ ((AUDIO && AUDIO.scale ? AUDIO.scale.length : 5) * 2654435761));
+
+  let ctx = null, master = null, windGain = null, padGain = null;
+  let graphBuilt = false, started = false, gestured = false, scheduler = null;
+  let chimeIdx = 0;
+  let lastMoney = Math.floor(town.money || 0);
+  let builtSet = new Set(town.buildings.filter(b => b.stage === 'built').map(b => b.id));
+
+  // ¿Preferencia guardada? default 'on' (pero sin sonar hasta el gesto).
+  let enabled = true;
+  try { enabled = localStorage.getItem(SOUND_KEY) !== 'off'; } catch (_e) { enabled = true; }
+
+  // Rampa suave de un AudioParam (jamas saltos de ganancia -> sin clicks).
+  function ramp(param, target, time) {
+    const now = ctx.currentTime;
+    param.cancelScheduledValues(now);
+    param.setValueAtTime(param.value, now);
+    param.linearRampToValueAtTime(target, now + time);
+  }
+
+  // Buffer de ruido blanco (determinista) para el viento.
+  function noiseBuffer() {
+    const len = Math.floor(ctx.sampleRate * 2);
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    let s = 0x9E3779B1 >>> 0;
+    for (let i = 0; i < len; i++) {
+      s = (Math.imul(s ^ (s >>> 15), 1 | s)) >>> 0;
+      d[i] = ((s >>> 0) / 4294967296) * 2 - 1;
+    }
+    return buf;
+  }
+
+  function buildGraph() {
+    master = ctx.createGain(); master.gain.value = 0; master.connect(ctx.destination);
+
+    // Viento: ruido -> lowpass -> gain (con LFO lento modulando la ganancia).
+    const src = ctx.createBufferSource(); src.buffer = noiseBuffer(); src.loop = true;
+    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 520;
+    windGain = ctx.createGain(); windGain.gain.value = 0;
+    src.connect(lp).connect(windGain).connect(master); src.start();
+    const lfo = ctx.createOscillator(); lfo.type = 'sine'; lfo.frequency.value = 0.08;
+    const lfoAmt = ctx.createGain(); lfoAmt.gain.value = 0.08;
+    lfo.connect(lfoAmt).connect(windGain.gain); lfo.start();
+
+    // Pad: acorde suave (root/tercera/quinta de la escala, una octava abajo).
+    padGain = ctx.createGain(); padGain.gain.value = 0; padGain.connect(master);
+    const scale = (AUDIO && AUDIO.scale) || [];
+    for (const idx of [0, 2, 4]) {
+      const f = scale[idx]; if (!f) continue;
+      const o = ctx.createOscillator(); o.type = 'sine'; o.frequency.value = f / 2;
+      const dv = ctx.createGain(); dv.gain.value = 1 / 3; // reparte para no saturar
+      o.connect(dv).connect(padGain); o.start();
+    }
+  }
+
+  // Chirp FM corto (pajaro), escalado por el nivel de mezcla.
+  function chirp(level) {
+    if (level <= 0) return;
+    const now = ctx.currentTime;
+    const base = 1500 + rng() * 1300;
+    const car = ctx.createOscillator(); car.type = 'sine';
+    const mod = ctx.createOscillator(); mod.type = 'sine';
+    const modAmt = ctx.createGain(); const g = ctx.createGain();
+    car.frequency.setValueAtTime(base, now);
+    car.frequency.linearRampToValueAtTime(base * (1.1 + rng() * 0.35), now + 0.07);
+    mod.frequency.value = base * 2; modAmt.gain.value = base * 0.5;
+    mod.connect(modAmt).connect(car.frequency);
+    const amp = 0.12 * level;
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.exponentialRampToValueAtTime(amp, now + 0.006);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + 0.13);
+    car.connect(g).connect(master);
+    car.start(now); mod.start(now); car.stop(now + 0.15); mod.stop(now + 0.15);
+    car.onended = () => { try { car.disconnect(); mod.disconnect(); modAmt.disconnect(); g.disconnect(); } catch (_e) { /* noop */ } };
+  }
+
+  // Pulso agudo periodico (grillo), escalado por el nivel de mezcla.
+  function cricket(level) {
+    if (level <= 0) return;
+    const now = ctx.currentTime;
+    const o = ctx.createOscillator(); o.type = 'square'; o.frequency.value = 4200 + rng() * 300;
+    const g = ctx.createGain(); g.gain.setValueAtTime(0.0001, now);
+    const amp = 0.05 * level;
+    for (let i = 0; i < 3; i++) {
+      const st = now + i * 0.03;
+      g.gain.setValueAtTime(amp, st);
+      g.gain.exponentialRampToValueAtTime(0.0001, st + 0.018);
+    }
+    o.connect(g).connect(master);
+    o.start(now); o.stop(now + 0.12);
+    o.onended = () => { try { o.disconnect(); g.disconnect(); } catch (_e) { /* noop */ } };
+  }
+
+  // Campanita/bell de evento (attack ~5ms, release exponencial), envolvente de AUDIO.events.
+  function bell(freq, ev) {
+    if (!started || !enabled || !ctx || !freq || !ev) return;
+    const now = ctx.currentTime;
+    const dur = ev.dur || 0.5;
+    const o = ctx.createOscillator(); o.type = ev.wave || 'triangle'; o.frequency.value = freq;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.exponentialRampToValueAtTime(ev.gain || 0.5, now + 0.005);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+    o.connect(g).connect(master);
+    o.start(now); o.stop(now + dur + 0.05);
+    o.onended = () => { try { o.disconnect(); g.disconnect(); } catch (_e) { /* noop */ } };
+  }
+
+  function playEvent(name) {
+    if (!AUDIO || !AUDIO.events) return;
+    const ev = AUDIO.events[name];
+    if (name === 'place') bell(chimeFor(AUDIO, chimeIdx++), ev);
+    else if (name === 'buildDone') bell(AUDIO.scale[AUDIO.scale.length - 1], ev);
+    else if (name === 'sale') bell(AUDIO.scale[2] || AUDIO.scale[0], ev);
+  }
+
+  // Detecta eventos del mundo (venta = sube town.money; obra lista = nuevo 'built').
+  function pollWorld() {
+    const money = Math.floor(town.money || 0);
+    if (money > lastMoney) playEvent('sale');
+    lastMoney = money;
+    for (const b of town.buildings) {
+      if (b.stage === 'built' && !builtSet.has(b.id)) { builtSet.add(b.id); playEvent('buildDone'); }
+    }
+  }
+
+  // Actualiza la mezcla ~2/s con rampas; dispara chirps/pulsos y sondea el mundo.
+  function update() {
+    if (!started || !ctx || !AUDIO) return;
+    if (typeof document !== 'undefined' && document.hidden) return; // pestana oculta: no acumular eventos
+    const mix = ambientMix(AUDIO, timeOfDay(town));
+    ramp(windGain.gain, mix.wind, 0.45);
+    ramp(padGain.gain, mix.pad, 0.45);
+    if (rng() < mix.birds * 0.9) chirp(mix.birds);
+    if (rng() < mix.crickets * 0.85) cricket(mix.crickets);
+    pollWorld();
+  }
+
+  function syncBaselines() {
+    lastMoney = Math.floor(town.money || 0);
+    builtSet = new Set(town.buildings.filter(b => b.stage === 'built').map(b => b.id));
+  }
+
+  function start() {
+    if (!AC || !AUDIO) return;
+    try {
+      if (!ctx) ctx = new AC();
+      if (ctx.state === 'suspended' && ctx.resume) ctx.resume();
+      if (!graphBuilt) { buildGraph(); graphBuilt = true; }
+      started = true;
+      syncBaselines(); // evita un burst de eventos falsos al arrancar
+      ramp(master.gain, AUDIO.masterGain || 0.6, 0.5);
+      if (!scheduler) scheduler = setInterval(update, 500);
+    } catch (_e) { /* audio nunca puede romper el juego */ }
+  }
+
+  function silence() {
+    try { if (master && ctx) ramp(master.gain, 0, 0.4); } catch (_e) { /* noop */ }
+    if (scheduler) { clearInterval(scheduler); scheduler = null; }
+    started = false;
+  }
+
+  function updateBtn() {
+    if (!soundBtn) return;
+    soundBtn.textContent = enabled ? '🔊 Sonido' : '🔇 Sonido';
+    soundBtn.setAttribute('aria-pressed', enabled ? 'true' : 'false');
+  }
+
+  function toggle() {
+    enabled = !enabled;
+    try { localStorage.setItem(SOUND_KEY, enabled ? 'on' : 'off'); } catch (_e) { /* noop */ }
+    updateBtn();
+    if (enabled) { if (gestured) start(); } else { silence(); }
+    return enabled;
+  }
+
+  // Primer gesto del usuario: recien ahi se crea/reanuda el AudioContext.
+  function onGesture() {
+    if (gestured) return;
+    gestured = true;
+    if (enabled) start();
+  }
+
+  updateBtn();
+  if (soundBtn) soundBtn.addEventListener('click', toggle);
+  if (typeof window !== 'undefined') {
+    window.addEventListener('pointerdown', onGesture, { once: false });
+    window.addEventListener('keydown', onGesture, { once: false });
+  }
+
+  return {
+    event: playEvent,
+    enabled: () => enabled,
+    toggle,
+    ctxState: () => (ctx ? ctx.state : 'none'),
+  };
+}
+
 export function start(opts = {}) {
   const GAME = window.GAME;
   const Adapter = window.ThreeVoxelAdapter;
@@ -97,6 +319,10 @@ export function start(opts = {}) {
     eco = createEconomy();
   }
   const ECON = GAME.ECON;
+
+  // ---- Audio cozy (WebAudio sintetizado; nace en silencio hasta el 1er gesto) --
+  const soundBtn = opts.soundBtn || (typeof document !== 'undefined' ? document.getElementById('soundBtn') : null);
+  const audio = createAudioEngine(GAME, town, eco, soundBtn);
 
   // ---- Escena / renderer ---------------------------------------------------
   const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
@@ -513,6 +739,7 @@ export function start(opts = {}) {
       const anchors = dragToAnchors(dragPath, town);
       const res = placeBlock(town, mode, anchors); // atomico: invalido no muta
       if (res && res.ok === false && res.reason === 'funds') showNotice(GAME.TEXTS.noFunds);
+      else if (res && res.ok) audio.event('place'); // nota cozy al colocar un bloque
       dragging = false; dragPath = []; disposeGroup(ghostGroup);
       rebuildStatic();
     }
@@ -731,6 +958,7 @@ export function start(opts = {}) {
     town, ag, eco, game: GAME, renderer, scene, camera, renderOnce,
     placeAt: (kind, anchors) => placeBlock(town, kind, anchors),
     setMode, save, clearSave,
+    audio: { enabled: audio.enabled, toggle: audio.toggle, ctxState: audio.ctxState },
   };
   window.MT = MT;
   return MT;

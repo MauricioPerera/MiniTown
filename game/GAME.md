@@ -48,6 +48,14 @@ econ:
   cartLoad: 5
   restockBelow: 10
   cartSpeed: 3
+audio:
+  masterGain: 0.6
+  ambient: { birdsMax: 0.5, cricketsMax: 0.45, windBase: 0.28, padMax: 0.3 }
+  scale: [261.63, 329.63, 392.0, 440.0, 523.25, 659.25]
+  events:
+    place: { gain: 0.5, dur: 0.4, wave: triangle }
+    buildDone: { gain: 0.6, dur: 0.9, wave: sine }
+    sale: { gain: 0.45, dur: 0.6, wave: triangle }
 texts:
   home: Casa
   shop: Tienda
@@ -190,6 +198,22 @@ coherentes con los conceptos:
 - `restockBelow`: umbral de stock del mercado que dispara un reabastecimiento (en
   [1, `marketCap`]).
 - `cartSpeed`: velocidad del carrito de reparto (> 0).
+
+## Audio
+`audio` reune el balance del sonido cozy, 100% sintetizado con WebAudio (sin assets):
+
+- `masterGain`: ganancia maestra de toda la mezcla, en (0,1].
+- `ambient`: topes sutiles del ambiente continuo (esto es fondo, no protagonista), cada uno
+  en 0..1: `birdsMax` (pajaros, pico de dia), `cricketsMax` (grillos, pico de noche),
+  `windBase` (viento de base) y `padMax` (colchon armonico).
+- `scale`: >= 5 frecuencias Hz ASCENDENTES en 100..2000 (pentatonica mayor C4 E4 G4 A4 C5 E5,
+  suena cozy sin disonancias); las campanitas de eventos ciclan por esta escala.
+- `events`: envolventes de los efectos puntuales `place` (colocar bloque), `buildDone`
+  (edificio terminado) y `sale` (venta en el mercado), cada uno `{gain (0,1], dur (0,3]}`
+  (mas campos que el motor use, p.ej. `wave`).
+
+El nucleo puro (`game/src/audio-core.mjs`) deriva de estos datos la mezcla por hora
+(`ambientMix`) y la nota de cada campanita (`chimeFor`), sin tocar WebAudio.
 
 ## Texts
 `texts` son las etiquetas de UI en espanol (ASCII, sin acentos): `home`, `shop`,

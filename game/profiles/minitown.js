@@ -158,6 +158,37 @@
     if (!numGt0(e.cartSpeed)) err('econ.cartSpeed debe ser numero > 0: ' + e.cartSpeed);
   }
 
+  // mt-audio (audio cozy): valida la coleccion `audio` cuando esta presente. Rangos exactos
+  // segun contrato: masterGain y gains de eventos en (0,1]; niveles de ambient en 0..1;
+  // durs de eventos en (0,3]; escala de >=5 notas ascendentes en 100..2000 Hz.
+  const inUnit = v => typeof v === 'number' && v > 0 && v <= 1;   // (0,1]
+  const in01c = v => typeof v === 'number' && v >= 0 && v <= 1;   // [0,1]
+  function ruleAudio({ data, add }) {
+    if (!('audio' in data)) return;
+    const a = data.audio || {};
+    const err = m => add('error', 'mt-audio', m);
+    if (!inUnit(a.masterGain)) err('audio.masterGain debe estar en (0,1]: ' + a.masterGain);
+    const amb = a.ambient || {};
+    for (const k of ['birdsMax', 'cricketsMax', 'windBase', 'padMax'])
+      if (!in01c(amb[k])) err('audio.ambient.' + k + ' debe estar en 0..1: ' + amb[k]);
+    const sc = a.scale;
+    if (!(Array.isArray(sc) && sc.length >= 5)) {
+      err('audio.scale debe ser una lista de >=5 notas: ' + JSON.stringify(sc));
+    } else {
+      for (let i = 0; i < sc.length; i++) {
+        if (!(typeof sc[i] === 'number' && sc[i] >= 100 && sc[i] <= 2000))
+          err('audio.scale[' + i + '] fuera de 100..2000 Hz: ' + sc[i]);
+        if (i > 0 && !(sc[i] > sc[i - 1])) err('audio.scale debe ser ascendente (indice ' + i + '): ' + sc[i]);
+      }
+    }
+    const ev = a.events || {};
+    for (const k of ['place', 'buildDone', 'sale']) {
+      const e = ev[k] || {};
+      if (!inUnit(e.gain)) err('audio.events.' + k + '.gain debe estar en (0,1]: ' + e.gain);
+      if (!(typeof e.dur === 'number' && e.dur > 0 && e.dur <= 3)) err('audio.events.' + k + '.dur debe estar en (0,3]: ' + e.dur);
+    }
+  }
+
   // mt-names: >=20 nombres unicos.
   function ruleNames({ data, add }) {
     if (!('names' in data)) return;
@@ -176,6 +207,7 @@
     { key: 'TEXTS', from: 'texts' },
     { key: 'NAMES', from: 'names', default: [] },
     { key: 'ECON', from: 'econ' },
+    { key: 'AUDIO', from: 'audio' },
   ];
 
   return {
@@ -183,7 +215,7 @@
     specVersion: '0.1',
     sections: [
       'Overview', 'Building Kinds', 'Building Variants', 'Stages', 'Palette',
-      'Schedules', 'Sim', 'Econ', 'Texts', 'Names', 'Materials', 'Prefabs', 'Structures',
+      'Schedules', 'Sim', 'Econ', 'Audio', 'Texts', 'Names', 'Materials', 'Prefabs', 'Structures',
       "Do's and Don'ts",
     ],
     required: ['version', 'name', 'profile'],
@@ -192,7 +224,7 @@
     // Reutiliza las reglas voxel (materiales, prefabs, estructuras) y agrega las de MiniTown.
     rules: (voxel.rules || []).concat([
       ruleScheduleOrder, ruleVariantColor, ruleScheduleRange, ruleKinds,
-      rulePalette, ruleSim, ruleStages, ruleTexts, ruleNames, ruleEcon,
+      rulePalette, ruleSim, ruleStages, ruleTexts, ruleNames, ruleEcon, ruleAudio,
     ]),
     // Reutiliza el derive voxel (MATERIALS/PREFABS/STRUCTURES/VOXELS) y agrega las colecciones sim.
     derive: (voxel.derive || []).concat(mtDerive),

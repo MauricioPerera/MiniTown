@@ -1950,5 +1950,39 @@ window.GAME = {
     "cartLoad": 5,
     "restockBelow": 10,
     "cartSpeed": 3
+  },
+  "AUDIO": {
+    "masterGain": 0.6,
+    "ambient": {
+      "birdsMax": 0.5,
+      "cricketsMax": 0.45,
+      "windBase": 0.28,
+      "padMax": 0.3
+    },
+    "scale": [
+      261.63,
+      329.63,
+      392,
+      440,
+      523.25,
+      659.25
+    ],
+    "events": {
+      "place": {
+        "gain": 0.5,
+        "dur": 0.4,
+        "wave": "triangle"
+      },
+      "buildDone": {
+        "gain": 0.6,
+        "dur": 0.9,
+        "wave": "sine"
+      },
+      "sale": {
+        "gain": 0.45,
+        "dur": 0.6,
+        "wave": "triangle"
+      }
+    }
   }
 };
