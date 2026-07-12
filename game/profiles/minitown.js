@@ -264,6 +264,46 @@
     if (!in01c(p.leaveBelow)) err('policy.leaveBelow debe estar en 0..1: ' + p.leaveBelow);
   }
 
+  // mt-building-models: valida la coleccion OPCIONAL `buildingModels`. Forma:
+  // { <kind>: [{ name: <estilo>, perLevel: [<structure_l1>, <structure_l2>, <structure_l3>] }, ...] }.
+  // Cada kind es uno de KINDS6; cada valor una lista no vacia de estilos; cada estilo tiene name
+  // string no vacio y unico dentro del kind, y perLevel lista de EXACTAMENTE 3 strings que refieren
+  // claves de data.structures (el mensaje nombra la referencia rota). No revalida structures.
+  function bmCheckPerLevel(kind, i, pl, structures, err) {
+    if (!(Array.isArray(pl) && pl.length === 3 && pl.every(s => typeof s === 'string'))) {
+      err(kind + '[' + i + '].perLevel debe ser lista de exactamente 3 strings: ' + JSON.stringify(pl));
+      return;
+    }
+    for (const ref of pl)
+      if (!(ref in structures))
+        err(kind + '[' + i + '].perLevel referencia una estructura inexistente: ' + ref);
+  }
+  function bmCheckStyles(kind, list, structures, err) {
+    const seen = new Set();
+    for (let i = 0; i < list.length; i++) {
+      const st = list[i] || {};
+      const name = st.name;
+      if (!(typeof name === 'string' && name.length > 0))
+        err(kind + '[' + i + '].name debe ser string no vacio: ' + JSON.stringify(name));
+      else if (seen.has(name)) err(kind + ': name duplicado dentro del kind: ' + name);
+      else seen.add(name);
+      bmCheckPerLevel(kind, i, st.perLevel, structures, err);
+    }
+  }
+  function ruleBuildingModels({ data, add }) {
+    if (!('buildingModels' in data)) return;
+    const err = m => add('error', 'mt-building-models', m);
+    const kinds = new Set(KINDS6.split(','));
+    const structures = data.structures || {};
+    for (const [kind, list] of Object.entries(data.buildingModels || {})) {
+      if (!kinds.has(kind)) { err('kind desconocido (no es uno de ' + KINDS6 + '): ' + kind); continue; }
+      if (!(Array.isArray(list) && list.length > 0)) {
+        err(kind + ' debe ser una lista no vacia de estilos: ' + JSON.stringify(list)); continue;
+      }
+      bmCheckStyles(kind, list, structures, err);
+    }
+  }
+
   const mtDerive = [
     { key: 'KINDS', from: 'buildingKinds' },
     { key: 'VARIANTS', from: 'buildingVariants' },
@@ -277,13 +317,14 @@
     { key: 'AUDIO', from: 'audio' },
     { key: 'WEATHER', from: 'weather' },
     { key: 'POLICY', from: 'policy' },
+    { key: 'BUILDING_MODELS', from: 'buildingModels', default: {} },
   ];
 
   return {
     id: 'minitown',
     specVersion: '0.1',
     sections: [
-      'Overview', 'Building Kinds', 'Building Variants', 'Stages', 'Palette',
+      'Overview', 'Building Kinds', 'Building Variants', 'Building Models', 'Stages', 'Palette',
       'Schedules', 'Sim', 'Econ', 'Audio', 'Weather', 'Policy', 'Texts', 'Names', 'Materials', 'Prefabs', 'Structures',
       "Do's and Don'ts",
     ],
@@ -294,7 +335,7 @@
     rules: (voxel.rules || []).concat([
       ruleScheduleOrder, ruleVariantColor, ruleScheduleRange, ruleKinds,
       rulePalette, ruleSim, ruleStages, ruleTexts, ruleNames, ruleEcon, ruleAudio, ruleWeather,
-      rulePolicy,
+      rulePolicy, ruleBuildingModels,
     ]),
     // Reutiliza el derive voxel (MATERIALS/PREFABS/STRUCTURES/VOXELS) y agrega las colecciones sim.
     derive: (voxel.derive || []).concat(mtDerive),
