@@ -209,12 +209,44 @@ export function createAgents({ seed }) {
   return { seed: seed | 0, residents: [], nextId: 1, spawnCount: 0 };
 }
 
+// Modo GRADUAL (minitown-policy): spawnea a lo sumo floor(town.immigrants) residentes en
+// cupos libres (mismo orden determinista de casas) descontando los spawneados, y si
+// town.emigrants >= 1 remueve floor(town.emigrants) residentes (id MAS ALTO primero).
+function syncGradual(ag, town, game, homes, works, shops) {
+  let budget = Math.floor(town.immigrants);
+  let spawned = 0;
+  for (const home of homes) {
+    if (budget <= 0) break;
+    const existing = ag.residents.filter(r => r.homeId === home.id).length;
+    for (let k = existing; k < home.capacity && budget > 0; k++) {
+      spawnResident(ag, town, game, home, works, shops);
+      budget--; spawned++;
+    }
+  }
+  town.immigrants -= spawned;
+  if (town.emigrants >= 1) {
+    let toRemove = Math.floor(town.emigrants);
+    const removeIds = new Set();
+    for (const r of ag.residents.slice().sort((a, b) => b.id - a.id)) {
+      if (toRemove <= 0) break;
+      removeIds.add(r.id); toRemove--;
+    }
+    if (removeIds.size) {
+      ag.residents = ag.residents.filter(r => !removeIds.has(r.id));
+      town.emigrants -= removeIds.size;
+    }
+  }
+  return ag;
+}
+
 export function syncAgents(ag, town, game) {
   const homes = town.buildings.filter(b => b.kind === 'residential' && b.occupied);
   const WORK_KINDS = { workspace: true, farm: true, warehouse: true, market: true };
   const SHOP_KINDS = { shop: true, market: true };
   const works = town.buildings.filter(b => WORK_KINDS[b.kind] && b.occupied);
   const shops = town.buildings.filter(b => SHOP_KINDS[b.kind] && b.occupied);
+  // Modo gradual SOLO si el town trae la cola de inmigrantes (fixtures/oraculos viejos: clasico).
+  if (typeof town.immigrants === 'number') return syncGradual(ag, town, game, homes, works, shops);
   for (const home of homes) {
     const existing = ag.residents.filter(r => r.homeId === home.id).length;
     for (let k = existing; k < home.capacity; k++) spawnResident(ag, town, game, home, works, shops);

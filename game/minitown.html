@@ -53,7 +53,29 @@
   #hud .hud-clock { color: var(--accent); font-weight: 700; font-variant-numeric: tabular-nums; font-size: 15px; }
   #hud .hud-money { color: #9be29b; font-weight: 700; font-variant-numeric: tabular-nums; }
   #hud .hud-weather { color: #bcd6ff; font-weight: 600; }
+  #hud .hud-pop { color: #e6d6ff; font-weight: 600; }
+  #hud .hud-att { color: #ffd9a8; font-weight: 600; font-variant-numeric: tabular-nums; }
   #hud .hud-keys { opacity: 0.55; }
+
+  /* Panel de politica (plegable desde la toolbar): mismo lenguaje visual del HUD. */
+  #policyPanel {
+    position: fixed; top: 12px; left: 304px; z-index: 10;
+    font-family: "Segoe UI", system-ui, sans-serif; color: var(--panel-fg);
+    background: var(--panel-bg); border-radius: 14px; padding: 12px 14px;
+    backdrop-filter: blur(6px); box-shadow: 0 8px 28px rgba(0,0,0,0.35);
+    width: 232px; user-select: none; font-size: 12px;
+  }
+  #policyPanel[hidden] { display: none; }
+  #policyPanel h2 { margin: 0 0 8px; font-size: 13px; letter-spacing: 0.4px; color: var(--accent); }
+  #policyPanel .pol-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  #policyPanel .pol-row label { flex: 0 0 68px; opacity: 0.85; }
+  #policyPanel #polTaxSlider { flex: 1 1 auto; accent-color: var(--accent); }
+  #policyPanel #polTaxVal { flex: 0 0 30px; text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--accent); }
+  #policyPanel .pol-bar { flex: 1 1 auto; height: 10px; border-radius: 6px; background: rgba(255,255,255,0.12); overflow: hidden; }
+  #policyPanel #polAttFill { height: 100%; width: 0%; border-radius: 6px; transition: width .3s, background .3s; }
+  #policyPanel #polAttVal { flex: 0 0 34px; text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+  #policyPanel .pol-status { border-top: 1px solid rgba(255,255,255,0.12); padding-top: 8px; line-height: 1.6; opacity: 0.92; }
+  #policyPanel .pol-status div { font-variant-numeric: tabular-nums; }
 
   #notice {
     position: fixed; top: 12px; left: 50%; transform: translateX(-50%); z-index: 12;
@@ -95,8 +117,28 @@
     <button data-mode="market">Mercado (6)</button>
   </div>
   <div id="actions">
+    <button id="policyBtn" type="button" title="Panel de gestion (impuestos / atractividad)" aria-expanded="false" aria-controls="policyPanel">⚖ Gestion</button>
     <button id="soundBtn" type="button" title="Sonido ambiente (on/off)">🔊 Sonido</button>
     <button id="newGame" type="button">Nueva partida</button>
+  </div>
+</div>
+
+<div id="policyPanel" hidden>
+  <h2>Gestion</h2>
+  <div class="pol-row pol-tax">
+    <label id="polTaxLabel" for="polTaxSlider">Impuestos</label>
+    <input type="range" id="polTaxSlider" min="0" max="10" step="0.5" value="3">
+    <span id="polTaxVal">3.0</span>
+  </div>
+  <div class="pol-row pol-att">
+    <label id="polAttLabel">Atractividad</label>
+    <div class="pol-bar"><div id="polAttFill"></div></div>
+    <span id="polAttVal">0%</span>
+  </div>
+  <div class="pol-status">
+    <div id="polPop"></div>
+    <div id="polRevenue"></div>
+    <div id="polImmig"></div>
   </div>
 </div>
 
@@ -126,6 +168,8 @@ start({
   notice: document.getElementById('notice'),
   newGameBtn: document.getElementById('newGame'),
   soundBtn: document.getElementById('soundBtn'),
+  policyBtn: document.getElementById('policyBtn'),
+  policyPanel: document.getElementById('policyPanel'),
 });
 </script>
 </body>

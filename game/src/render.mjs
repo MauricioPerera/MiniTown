@@ -11,6 +11,7 @@ import { dragToAnchors } from './input-core.mjs';
 import { serializeState, restoreState } from './save-core.mjs';
 import { ambientMix, chimeFor } from './audio-core.mjs';
 import { ensureWeather, tickWeather, weatherFx } from './weather-core.mjs';
+import { ensurePolicy, tickPolicy, attractiveness } from './policy-core.mjs';
 
 // Clave del autosave en localStorage (persistencia del pueblo entre sesiones).
 const SAVE_KEY = 'minitown-save-v1';
@@ -397,6 +398,10 @@ export function start(opts = {}) {
   ensureWeather(town, GAME, WEATHER_SEED);
   let curFx = weatherFx(town.weather, GAME.WEATHER);
   const ECON = GAME.ECON;
+  // Politica: instala el estado (taxRate/immigrants/emigrants) si falta. Idempotente:
+  // un save viejo sin policy arranca con la politica por defecto sin perder nada.
+  ensurePolicy(town, GAME);
+  const POLICY = GAME.POLICY;
 
   // ---- Audio cozy (WebAudio sintetizado; nace en silencio hasta el 1er gesto) --
   const soundBtn = opts.soundBtn || (typeof document !== 'undefined' ? document.getElementById('soundBtn') : null);
@@ -911,6 +916,7 @@ export function start(opts = {}) {
       `<span class="hud-clock">${fmtClock()}</span>` +
       `<span class="hud-weather">${weatherLabel()}</span>` +
       `<span class="hud-pop">poblacion ${ag.residents.length}</span>` +
+      `<span class="hud-att">${GAME.TEXTS.attractiveness} ${Math.round(lastAtt * 100)}%</span>` +
       (ECON ? `<span class="hud-money">${GAME.TEXTS.money} ${money}</span>` : '') +
       `<span class="hud-mode">${modeLabel()}</span>` +
       `<span class="hud-keys">E explorar · 1 casa · 2 tienda · 3 taller · 4 granja · 5 almacen · 6 mercado · WASD/rueda camara</span>`;
@@ -922,6 +928,96 @@ export function start(opts = {}) {
     for (const btn of bar.querySelectorAll('button')) btn.classList.toggle('active', btn.dataset.mode === mode);
   }
   function setMode(m) { mode = m; updateHUD(); }
+
+  // ---- Panel de politica (impuestos / atractividad / migracion) -----------
+  // Presentacion pura: todo valor sale de policy-core (attractiveness) o de los datos
+  // (POLICY/TEXTS). Cero formulas de negocio reimplementadas.
+  let lastAtt = attractiveness(town, ag, GAME); // atractividad cacheada para el HUD (~1/s)
+  // Cupos de vivienda = capacidad de casas ocupadas (lectura de datos, como el resto del HUD).
+  function housingCap() {
+    let cap = 0;
+    for (const b of town.buildings) if (b.kind === 'residential' && b.occupied) cap += b.capacity;
+    return cap;
+  }
+  // Clamp de la tasa al rango del contrato [0, taxMax].
+  function clampTax(v) {
+    const n = Number(v);
+    if (!Number.isFinite(n)) return town.policy.taxRate;
+    return Math.max(0, Math.min(POLICY.taxMax, n));
+  }
+  const policyBtn = opts.policyBtn || (typeof document !== 'undefined' ? document.getElementById('policyBtn') : null);
+  const policyPanel = opts.policyPanel || (typeof document !== 'undefined' ? document.getElementById('policyPanel') : null);
+  const pol = policyPanel ? {
+    taxLabel: policyPanel.querySelector('#polTaxLabel'),
+    tax: policyPanel.querySelector('#polTaxSlider'),
+    taxVal: policyPanel.querySelector('#polTaxVal'),
+    attLabel: policyPanel.querySelector('#polAttLabel'),
+    attFill: policyPanel.querySelector('#polAttFill'),
+    attVal: policyPanel.querySelector('#polAttVal'),
+    pop: policyPanel.querySelector('#polPop'),
+    revenue: policyPanel.querySelector('#polRevenue'),
+    immig: policyPanel.querySelector('#polImmig'),
+  } : null;
+
+  // Refresca el cuerpo del panel (~1/s): medidor, cupos, recaudacion e inmigracion.
+  // Cachea la atractividad (lastAtt) para el HUD compacto sin recalcular por frame.
+  function refreshPolicy() {
+    const att = attractiveness(town, ag, GAME);
+    lastAtt = att;
+    if (!pol) return;
+    const residents = ag.residents.length;
+    if (pol.attFill) {
+      pol.attFill.style.width = Math.round(att * 100) + '%';
+      // Color calido si alta, frio si baja: hue 210 (frio) -> 30 (calido).
+      pol.attFill.style.background = `hsl(${Math.round(210 - att * 180)}, 72%, 56%)`;
+    }
+    if (pol.attVal) pol.attVal.textContent = Math.round(att * 100) + '%';
+    if (pol.pop) pol.pop.textContent = `${GAME.TEXTS.residents}: ${residents} / ${housingCap()}`;
+    // Recaudacion estimada/dia = residentes x taxRate (formula del contrato).
+    if (pol.revenue) pol.revenue.textContent = `${GAME.TEXTS.money}/dia: ${Math.round(residents * town.policy.taxRate)}`;
+    if (pol.immig) {
+      const queue = Math.floor(town.immigrants);
+      let flow;
+      if (att >= POLICY.leaveBelow) {
+        const perDay = POLICY.baseImmigrationPerDay * att; // llegadas/dia
+        flow = `+${perDay.toFixed(1)}/dia`;
+      } else {
+        const perDay = POLICY.emigrationPerDay * (POLICY.leaveBelow - att) / POLICY.leaveBelow; // exodo/dia
+        flow = `-${perDay.toFixed(1)}/dia`;
+      }
+      pol.immig.textContent = `${GAME.TEXTS.immigration}: ${flow} · cola ${queue}`;
+    }
+  }
+  // Sincroniza el slider y su etiqueta con town.policy.taxRate (tras setTax o boot).
+  function syncTaxControl() {
+    if (!pol) return;
+    if (pol.tax) pol.tax.value = String(town.policy.taxRate);
+    if (pol.taxVal) pol.taxVal.textContent = town.policy.taxRate.toFixed(1);
+  }
+  function setTax(v) {
+    town.policy.taxRate = clampTax(v);
+    syncTaxControl();
+    refreshPolicy();
+    return town.policy.taxRate;
+  }
+  if (pol) {
+    if (pol.taxLabel) pol.taxLabel.textContent = GAME.TEXTS.taxes;
+    if (pol.attLabel) pol.attLabel.textContent = GAME.TEXTS.attractiveness;
+    if (pol.tax) {
+      pol.tax.min = '0'; pol.tax.max = String(POLICY.taxMax); pol.tax.step = '0.5';
+      pol.tax.addEventListener('input', () => setTax(pol.tax.value));
+    }
+    syncTaxControl();
+    refreshPolicy();
+  }
+  if (policyBtn && policyPanel) {
+    policyBtn.addEventListener('click', () => {
+      const shown = policyPanel.hasAttribute('hidden');
+      if (shown) { policyPanel.removeAttribute('hidden'); refreshPolicy(); }
+      else policyPanel.setAttribute('hidden', '');
+      policyBtn.setAttribute('aria-expanded', shown ? 'true' : 'false');
+    });
+  }
 
   // ---- Listeners ----------------------------------------------------------
   const el = renderer.domElement;
@@ -965,17 +1061,22 @@ export function start(opts = {}) {
     if (s !== lastSig) { lastSig = s; rebuildStatic(); }
   }
 
-  let syncAcc = 0, cropAcc = 0;
+  let syncAcc = 0, cropAcc = 0, policyAcc = 0;
   function frame(dt) {
     tick(town, dt);
     tickAgents(ag, town, GAME, dt);
     tickEconomy(eco, town, GAME, dt, ag.residents);
+    // Politica: recauda impuestos y actualiza colas de migracion. syncAgents (~1/s)
+    // consume esas colas mas abajo; no se duplican llamadas aca.
+    tickPolicy(town, GAME, dt, ag);
     tickWeather(town, GAME, dt);
     curFx = weatherFx(town.weather, GAME.WEATHER);
     syncAcc += dt;
     if (syncAcc >= 1) { syncAgents(ag, town, GAME); syncAcc = 0; }
     cropAcc += dt;
     if (cropAcc >= 1) { cropAcc = 0; refreshCropsIfChanged(); }
+    policyAcc += dt;
+    if (policyAcc >= 1) { policyAcc = 0; refreshPolicy(); } // medidor/HUD ~1/s (no por frame)
     refreshStructIfChanged();
     updateMovers();
     updateCarts();
@@ -1020,6 +1121,7 @@ export function start(opts = {}) {
     refreshCropsIfChanged();
     updateMovers();
     updateCarts();
+    refreshPolicy();
     applyDayNight();
     updateHUD();
     renderer.render(scene, camera);
@@ -1059,6 +1161,15 @@ export function start(opts = {}) {
     audio: { enabled: audio.enabled, toggle: audio.toggle, ctxState: audio.ctxState },
     // Verificacion del PM: estado del clima + efectos derivados.
     weather: () => ({ type: town.weather.type, intensity: town.weather.intensity, fx: weatherFx(town.weather, GAME.WEATHER) }),
+    // Verificacion del PM: estado de politica (atractividad viva) y control de la tasa.
+    policy: () => ({
+      taxRate: town.policy.taxRate,
+      att: attractiveness(town, ag, GAME),
+      immigrants: town.immigrants,
+      emigrants: town.emigrants,
+      residents: ag.residents.length,
+    }),
+    setTax,
   };
   window.MT = MT;
   return MT;

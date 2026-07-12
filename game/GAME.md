@@ -61,6 +61,15 @@ weather:
   chance: { rain: 0.35, snow: 0.2 }
   effects: { rainFarmMul: 1.5, snowFarmMul: 0, rainWalkMul: 0.85, snowWalkMul: 0.5 }
   visuals: { darkenMax: 0.5, snowCoverH: 3, rainSoundMax: 0.6 }
+policy:
+  taxMax: 10
+  taxDefault: 3
+  taxBaseline: 2
+  weights: { goods: 0.45, jobs: 0.15, lowTax: 0.4 }
+  goodsPerResident: 5
+  baseImmigrationPerDay: 6
+  leaveBelow: 0.25
+  emigrationPerDay: 4
 texts:
   home: Casa
   shop: Tienda
@@ -81,6 +90,9 @@ texts:
   weatherClear: Despejado
   weatherRain: Lluvia
   weatherSnow: Nieve
+  taxes: Impuestos
+  attractiveness: Atractividad
+  immigration: Inmigracion
 names: [Ana, Beto, Carla, Diego, Elena, Fabio, Gina, Hugo, Iris, Juan, Kevin, Lucia, Marco, Nadia, Omar, Paula, Quique, Rosa, Sergio, Tania, Ulises, Vera, Willy, Ximena, Yago, Zoe]
 materials:
   SKIN: { color: [240, 200, 170] }
@@ -238,6 +250,21 @@ consecuencias reales sobre la simulacion, el aspecto y el sonido. El estado vive
   en (0,1] y `snowWalkMul` en (0,1) (la nieve frena a los peatones; los autos no).
 - `visuals`: `darkenMax` y `rainSoundMax` en 0..1 (oscurecimiento y volumen de lluvia
   maximos) y `snowCoverH` > 0 (horas de nieve que blanquean del todo el suelo).
+
+## Policy
+`policy` reune el balance del loop de gestion (impuestos, atractividad y migracion gradual):
+
+- `taxMax`: tasa impositiva maxima (> 0); `taxDefault`: tasa inicial (en [0, taxMax]);
+  `taxBaseline`: tasa "justa" bajo la cual no penaliza la atractividad (en [0, taxMax)).
+- `weights`: pesos de la atractividad `goods`/`jobs`/`lowTax` (cada uno en 0..1, suman 1).
+- `goodsPerResident`: bienes en mercados deseados por residente para saturar el factor bienes
+  (> 0).
+- `baseImmigrationPerDay`: llegadas por dia con atractividad plena (> 0).
+- `leaveBelow`: umbral de atractividad (0..1) bajo el cual la gente empieza a irse.
+- `emigrationPerDay`: partidas por dia con atractividad nula (> 0).
+
+Los defaults hacen VIABLE crecer: con la tasa default una ciudad razonable recauda por dia
+(residentes x tasa) mucho mas que el goteo de costos puntuales de colocacion.
 
 ## Texts
 `texts` son las etiquetas de UI en espanol (ASCII, sin acentos): `home`, `shop`,

@@ -1901,7 +1901,10 @@ window.GAME = {
     "newGame": "Nueva partida",
     "weatherClear": "Despejado",
     "weatherRain": "Lluvia",
-    "weatherSnow": "Nieve"
+    "weatherSnow": "Nieve",
+    "taxes": "Impuestos",
+    "attractiveness": "Atractividad",
+    "immigration": "Inmigracion"
   },
   "NAMES": [
     "Ana",
@@ -2012,5 +2015,19 @@ window.GAME = {
       "snowCoverH": 3,
       "rainSoundMax": 0.6
     }
+  },
+  "POLICY": {
+    "taxMax": 10,
+    "taxDefault": 3,
+    "taxBaseline": 2,
+    "weights": {
+      "goods": 0.45,
+      "jobs": 0.15,
+      "lowTax": 0.4
+    },
+    "goodsPerResident": 5,
+    "baseImmigrationPerDay": 6,
+    "leaveBelow": 0.25,
+    "emigrationPerDay": 4
   }
 };

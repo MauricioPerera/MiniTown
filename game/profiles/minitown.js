@@ -239,6 +239,31 @@
     }
   }
 
+  // mt-policy (impuestos/atractividad/migracion): valida la coleccion `policy` cuando esta
+  // presente. Rangos exactos segun contrato minitown-policy: taxMax > 0; taxDefault en
+  // [0, taxMax]; taxBaseline en [0, taxMax); weights goods/jobs/lowTax en 0..1 sumando 1;
+  // goodsPerResident/baseImmigrationPerDay/emigrationPerDay > 0; leaveBelow en 0..1.
+  function rulePolicy({ data, add }) {
+    if (!('policy' in data)) return;
+    const p = data.policy || {};
+    const err = m => add('error', 'mt-policy', m);
+    if (!numGt0(p.taxMax)) err('policy.taxMax debe ser numero > 0: ' + p.taxMax);
+    const taxMax = numGt0(p.taxMax) ? p.taxMax : Infinity;
+    if (!(typeof p.taxDefault === 'number' && p.taxDefault >= 0 && p.taxDefault <= taxMax))
+      err('policy.taxDefault debe estar en [0, taxMax]: ' + p.taxDefault);
+    if (!(typeof p.taxBaseline === 'number' && p.taxBaseline >= 0 && p.taxBaseline < taxMax))
+      err('policy.taxBaseline debe estar en [0, taxMax): ' + p.taxBaseline);
+    const w = p.weights || {};
+    for (const k of ['goods', 'jobs', 'lowTax'])
+      if (!in01c(w[k])) err('policy.weights.' + k + ' debe estar en 0..1: ' + w[k]);
+    if (typeof w.goods === 'number' && typeof w.jobs === 'number' && typeof w.lowTax === 'number'
+        && Math.abs(w.goods + w.jobs + w.lowTax - 1) > 1e-6)
+      err('policy.weights (goods+jobs+lowTax) debe sumar 1: ' + (w.goods + w.jobs + w.lowTax));
+    for (const k of ['goodsPerResident', 'baseImmigrationPerDay', 'emigrationPerDay'])
+      if (!numGt0(p[k])) err('policy.' + k + ' debe ser numero > 0: ' + p[k]);
+    if (!in01c(p.leaveBelow)) err('policy.leaveBelow debe estar en 0..1: ' + p.leaveBelow);
+  }
+
   const mtDerive = [
     { key: 'KINDS', from: 'buildingKinds' },
     { key: 'VARIANTS', from: 'buildingVariants' },
@@ -251,6 +276,7 @@
     { key: 'ECON', from: 'econ' },
     { key: 'AUDIO', from: 'audio' },
     { key: 'WEATHER', from: 'weather' },
+    { key: 'POLICY', from: 'policy' },
   ];
 
   return {
@@ -258,7 +284,7 @@
     specVersion: '0.1',
     sections: [
       'Overview', 'Building Kinds', 'Building Variants', 'Stages', 'Palette',
-      'Schedules', 'Sim', 'Econ', 'Audio', 'Weather', 'Texts', 'Names', 'Materials', 'Prefabs', 'Structures',
+      'Schedules', 'Sim', 'Econ', 'Audio', 'Weather', 'Policy', 'Texts', 'Names', 'Materials', 'Prefabs', 'Structures',
       "Do's and Don'ts",
     ],
     required: ['version', 'name', 'profile'],
@@ -268,6 +294,7 @@
     rules: (voxel.rules || []).concat([
       ruleScheduleOrder, ruleVariantColor, ruleScheduleRange, ruleKinds,
       rulePalette, ruleSim, ruleStages, ruleTexts, ruleNames, ruleEcon, ruleAudio, ruleWeather,
+      rulePolicy,
     ]),
     // Reutiliza el derive voxel (MATERIALS/PREFABS/STRUCTURES/VOXELS) y agrega las colecciones sim.
     derive: (voxel.derive || []).concat(mtDerive),
