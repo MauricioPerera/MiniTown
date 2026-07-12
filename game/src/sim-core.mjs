@@ -162,7 +162,7 @@ function produceFarm(town, b, dt) {
   if (!econ || b.kind !== 'farm' || b.stage !== 'built' || !b.occupied) return;
   const gameHours = dt / town.game.SIM.dayLengthSec * 24;
   const rate = econ.farmRatePerLevel[b.level - 1];
-  let stock = (b.stock || 0) + rate * gameHours;
+  let stock = (b.stock || 0) + rate * gameHours * (town.weatherMods?.farmRate ?? 1);
   if (stock > econ.farmCap) stock = econ.farmCap;
   b.stock = stock;
 }

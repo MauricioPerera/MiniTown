@@ -1898,7 +1898,10 @@ window.GAME = {
     "stock": "Stock",
     "noFunds": "Sin fondos",
     "saved": "Guardado",
-    "newGame": "Nueva partida"
+    "newGame": "Nueva partida",
+    "weatherClear": "Despejado",
+    "weatherRain": "Lluvia",
+    "weatherSnow": "Nieve"
   },
   "NAMES": [
     "Ana",
@@ -1983,6 +1986,31 @@ window.GAME = {
         "dur": 0.6,
         "wave": "triangle"
       }
+    }
+  },
+  "WEATHER": {
+    "periods": {
+      "clearMinH": 4,
+      "clearMaxH": 8,
+      "rainMinH": 2,
+      "rainMaxH": 4,
+      "snowMinH": 2,
+      "snowMaxH": 3
+    },
+    "chance": {
+      "rain": 0.35,
+      "snow": 0.2
+    },
+    "effects": {
+      "rainFarmMul": 1.5,
+      "snowFarmMul": 0,
+      "rainWalkMul": 0.85,
+      "snowWalkMul": 0.5
+    },
+    "visuals": {
+      "darkenMax": 0.5,
+      "snowCoverH": 3,
+      "rainSoundMax": 0.6
     }
   }
 };

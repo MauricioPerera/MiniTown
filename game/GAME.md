@@ -56,6 +56,11 @@ audio:
     place: { gain: 0.5, dur: 0.4, wave: triangle }
     buildDone: { gain: 0.6, dur: 0.9, wave: sine }
     sale: { gain: 0.45, dur: 0.6, wave: triangle }
+weather:
+  periods: { clearMinH: 4, clearMaxH: 8, rainMinH: 2, rainMaxH: 4, snowMinH: 2, snowMaxH: 3 }
+  chance: { rain: 0.35, snow: 0.2 }
+  effects: { rainFarmMul: 1.5, snowFarmMul: 0, rainWalkMul: 0.85, snowWalkMul: 0.5 }
+  visuals: { darkenMax: 0.5, snowCoverH: 3, rainSoundMax: 0.6 }
 texts:
   home: Casa
   shop: Tienda
@@ -73,6 +78,9 @@ texts:
   noFunds: Sin fondos
   saved: Guardado
   newGame: Nueva partida
+  weatherClear: Despejado
+  weatherRain: Lluvia
+  weatherSnow: Nieve
 names: [Ana, Beto, Carla, Diego, Elena, Fabio, Gina, Hugo, Iris, Juan, Kevin, Lucia, Marco, Nadia, Omar, Paula, Quique, Rosa, Sergio, Tania, Ulises, Vera, Willy, Ximena, Yago, Zoe]
 materials:
   SKIN: { color: [240, 200, 170] }
@@ -214,6 +222,22 @@ coherentes con los conceptos:
 
 El nucleo puro (`game/src/audio-core.mjs`) deriva de estos datos la mezcla por hora
 (`ambientMix`) y la nota de cada campanita (`chimeFor`), sin tocar WebAudio.
+
+## Weather
+`weather` define el clima determinista y sembrado (despejado/lluvia/nieve) con
+consecuencias reales sobre la simulacion, el aspecto y el sonido. El estado vive en `town`
+(el save lo persiste) y `weather-core` (que llama la UI) es su reloj:
+
+- `periods`: duracion en horas de juego de cada tipo, `clearMinH`/`clearMaxH`,
+  `rainMinH`/`rainMaxH`, `snowMinH`/`snowMaxH` (todas > 0, con max >= min). Cada periodo
+  dura un valor sorteado en su rango.
+- `chance`: probabilidad de que tras un dia despejado siga `rain` o `snow` (cada una en
+  0..1, con suma <= 1; el resto re-sortea despejado).
+- `effects`: consecuencias en la simulacion via `town.weatherMods`: `rainFarmMul` >= 1 (la
+  lluvia riega y acelera las granjas), `snowFarmMul` = 0 (la nieve las pausa), `rainWalkMul`
+  en (0,1] y `snowWalkMul` en (0,1) (la nieve frena a los peatones; los autos no).
+- `visuals`: `darkenMax` y `rainSoundMax` en 0..1 (oscurecimiento y volumen de lluvia
+  maximos) y `snowCoverH` > 0 (horas de nieve que blanquean del todo el suelo).
 
 ## Texts
 `texts` son las etiquetas de UI en espanol (ASCII, sin acentos): `home`, `shop`,

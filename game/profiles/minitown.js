@@ -197,6 +197,48 @@
       add('error', 'mt-names', 'names debe ser una lista de >=20 nombres unicos (tiene ' + (Array.isArray(n) ? n.length : 'no-lista') + ')');
   }
 
+  // mt-weather (clima): valida la coleccion `weather` cuando esta presente. Rangos exactos
+  // segun contrato: periods.*H > 0 con max >= min; chance.rain/snow en 0..1 con suma <= 1;
+  // effects rainFarmMul >= 1, snowFarmMul = 0, rainWalkMul en (0,1], snowWalkMul en (0,1);
+  // visuals darkenMax/rainSoundMax en 0..1, snowCoverH > 0.
+  function ruleWeather({ data, add }) {
+    if (!('weather' in data)) return;
+    const w = data.weather || {};
+    const err = m => add('error', 'mt-weather', m);
+    const p = w.periods;
+    if (p) {
+      for (const k of ['clearMinH', 'clearMaxH', 'rainMinH', 'rainMaxH', 'snowMinH', 'snowMaxH'])
+        if (!(numGt0(p[k]))) err('weather.periods.' + k + ' debe ser > 0: ' + p[k]);
+      for (const [mn, mx] of [['clearMinH', 'clearMaxH'], ['rainMinH', 'rainMaxH'], ['snowMinH', 'snowMaxH']])
+        if (typeof p[mn] === 'number' && typeof p[mx] === 'number' && p[mx] < p[mn])
+          err('weather.periods.' + mx + ' debe ser >= ' + mn + ': ' + p[mx] + ' < ' + p[mn]);
+    }
+    const c = w.chance;
+    if (c) {
+      for (const k of ['rain', 'snow'])
+        if (!in01c(c[k])) err('weather.chance.' + k + ' debe estar en 0..1: ' + c[k]);
+      if (typeof c.rain === 'number' && typeof c.snow === 'number' && c.rain + c.snow > 1 + 1e-9)
+        err('weather.chance.rain+snow debe ser <= 1: ' + (c.rain + c.snow));
+    }
+    const e = w.effects;
+    if (e) {
+      if (!(typeof e.rainFarmMul === 'number' && e.rainFarmMul >= 1))
+        err('weather.effects.rainFarmMul debe ser >= 1 (la lluvia riega): ' + e.rainFarmMul);
+      if (e.snowFarmMul !== 0)
+        err('weather.effects.snowFarmMul debe ser 0 (la nieve pausa las granjas): ' + e.snowFarmMul);
+      if (!(typeof e.rainWalkMul === 'number' && e.rainWalkMul > 0 && e.rainWalkMul <= 1))
+        err('weather.effects.rainWalkMul debe estar en (0,1]: ' + e.rainWalkMul);
+      if (!(typeof e.snowWalkMul === 'number' && e.snowWalkMul > 0 && e.snowWalkMul < 1))
+        err('weather.effects.snowWalkMul debe estar en (0,1): ' + e.snowWalkMul);
+    }
+    const v = w.visuals;
+    if (v) {
+      for (const k of ['darkenMax', 'rainSoundMax'])
+        if (!in01c(v[k])) err('weather.visuals.' + k + ' debe estar en 0..1: ' + v[k]);
+      if (!(numGt0(v.snowCoverH))) err('weather.visuals.snowCoverH debe ser > 0: ' + v.snowCoverH);
+    }
+  }
+
   const mtDerive = [
     { key: 'KINDS', from: 'buildingKinds' },
     { key: 'VARIANTS', from: 'buildingVariants' },
@@ -208,6 +250,7 @@
     { key: 'NAMES', from: 'names', default: [] },
     { key: 'ECON', from: 'econ' },
     { key: 'AUDIO', from: 'audio' },
+    { key: 'WEATHER', from: 'weather' },
   ];
 
   return {
@@ -215,7 +258,7 @@
     specVersion: '0.1',
     sections: [
       'Overview', 'Building Kinds', 'Building Variants', 'Stages', 'Palette',
-      'Schedules', 'Sim', 'Econ', 'Audio', 'Texts', 'Names', 'Materials', 'Prefabs', 'Structures',
+      'Schedules', 'Sim', 'Econ', 'Audio', 'Weather', 'Texts', 'Names', 'Materials', 'Prefabs', 'Structures',
       "Do's and Don'ts",
     ],
     required: ['version', 'name', 'profile'],
@@ -224,7 +267,7 @@
     // Reutiliza las reglas voxel (materiales, prefabs, estructuras) y agrega las de MiniTown.
     rules: (voxel.rules || []).concat([
       ruleScheduleOrder, ruleVariantColor, ruleScheduleRange, ruleKinds,
-      rulePalette, ruleSim, ruleStages, ruleTexts, ruleNames, ruleEcon, ruleAudio,
+      rulePalette, ruleSim, ruleStages, ruleTexts, ruleNames, ruleEcon, ruleAudio, ruleWeather,
     ]),
     // Reutiliza el derive voxel (MATERIALS/PREFABS/STRUCTURES/VOXELS) y agrega las colecciones sim.
     derive: (voxel.derive || []).concat(mtDerive),

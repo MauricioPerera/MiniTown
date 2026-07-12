@@ -10,9 +10,12 @@ import { paletteAt, buildingVisual, moverVisual, cameraFrame } from './render-co
 import { dragToAnchors } from './input-core.mjs';
 import { serializeState, restoreState } from './save-core.mjs';
 import { ambientMix, chimeFor } from './audio-core.mjs';
+import { ensureWeather, tickWeather, weatherFx } from './weather-core.mjs';
 
 // Clave del autosave en localStorage (persistencia del pueblo entre sesiones).
 const SAVE_KEY = 'minitown-save-v1';
+// Semilla fija del clima: mismo pueblo, mismo clima reproducible entre sesiones.
+const WEATHER_SEED = 0x5EED17;
 
 // --------------------------------------------------------------------------
 // Utilidades de color / materiales reutilizables.
@@ -96,7 +99,8 @@ function createAudioEngine(GAME, town, eco, soundBtn) {
     : (typeof webkitAudioContext !== 'undefined' ? webkitAudioContext : null);
   const rng = mulberry32(0xA0D10 ^ ((AUDIO && AUDIO.scale ? AUDIO.scale.length : 5) * 2654435761));
 
-  let ctx = null, master = null, windGain = null, padGain = null;
+  let ctx = null, master = null, windGain = null, padGain = null, rainGain = null;
+  let rainLevel = 0; // ganancia objetivo de la capa de lluvia (fx.sound de weather-core)
   let graphBuilt = false, started = false, gestured = false, scheduler = null;
   let chimeIdx = 0;
   let lastMoney = Math.floor(town.money || 0);
@@ -138,6 +142,13 @@ function createAudioEngine(GAME, town, eco, soundBtn) {
     const lfo = ctx.createOscillator(); lfo.type = 'sine'; lfo.frequency.value = 0.08;
     const lfoAmt = ctx.createGain(); lfoAmt.gain.value = 0.08;
     lfo.connect(lfoAmt).connect(windGain.gain); lfo.start();
+
+    // Lluvia: ruido blanco -> highpass (siseo) -> gain (modulada por fx.sound del clima,
+    // rampas suaves como el viento; jamas suena sin lluvia).
+    const rsrc = ctx.createBufferSource(); rsrc.buffer = noiseBuffer(); rsrc.loop = true;
+    const rhp = ctx.createBiquadFilter(); rhp.type = 'highpass'; rhp.frequency.value = 800;
+    rainGain = ctx.createGain(); rainGain.gain.value = 0;
+    rsrc.connect(rhp).connect(rainGain).connect(master); rsrc.start();
 
     // Pad: acorde suave (root/tercera/quinta de la escala, una octava abajo).
     padGain = ctx.createGain(); padGain.gain.value = 0; padGain.connect(master);
@@ -228,6 +239,7 @@ function createAudioEngine(GAME, town, eco, soundBtn) {
     const mix = ambientMix(AUDIO, timeOfDay(town));
     ramp(windGain.gain, mix.wind, 0.45);
     ramp(padGain.gain, mix.pad, 0.45);
+    if (rainGain) ramp(rainGain.gain, rainLevel, 0.5);
     if (rng() < mix.birds * 0.9) chirp(mix.birds);
     if (rng() < mix.crickets * 0.85) cricket(mix.crickets);
     pollWorld();
@@ -285,11 +297,73 @@ function createAudioEngine(GAME, town, eco, soundBtn) {
     window.addEventListener('keydown', onGesture, { once: false });
   }
 
+  // La UI empuja el nivel de lluvia (fx.sound). update() (cada 500 ms) lo aplica con rampa.
+  function setRain(level) { rainLevel = Math.max(0, Math.min(1, level || 0)); }
+
   return {
     event: playEvent,
     enabled: () => enabled,
     toggle,
+    setRain,
     ctxState: () => (ctx ? ctx.state : 'none'),
+  };
+}
+
+// ------------------------------------------------------------------------
+// Particulas de clima: un solo THREE.Points por tipo (recicladas). La lluvia cae en
+// lineas rapidas casi verticales; la nieve, copos lentos con deriva. La intensidad (fx)
+// modula la opacidad; las particulas orbitan el foco de la camara para cubrir la vista.
+function createWeatherParticles(scene, THREE, town) {
+  const R = Math.max(town.w, town.h) * 0.7; // radio de la nube de particulas
+  const TOP = 22; // altura de reciclado
+
+  function makeSystem(count, size, color, opacity) {
+    const geo = new THREE.BufferGeometry();
+    const pos = new Float32Array(count * 3);
+    const vel = new Float32Array(count); // caida (unidades/seg), por particula
+    let s = 0x1234567 >>> 0;
+    const rnd = () => { s = (Math.imul(s ^ (s >>> 15), 1 | s)) >>> 0; return (s >>> 0) / 4294967296; };
+    for (let i = 0; i < count; i++) {
+      pos[i * 3] = (rnd() * 2 - 1) * R;
+      pos[i * 3 + 1] = rnd() * TOP;
+      pos[i * 3 + 2] = (rnd() * 2 - 1) * R;
+      vel[i] = 0.5 + rnd();
+    }
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    const mat = new THREE.PointsMaterial({ color, size, transparent: true, opacity: 0, depthWrite: false });
+    const pts = new THREE.Points(geo, mat);
+    pts.visible = false;
+    scene.add(pts);
+    return { pts, geo, pos, vel, count, rnd };
+  }
+
+  const rain = makeSystem(420, 0.16, 0xbcd6ff, 1);
+  const snow = makeSystem(320, 0.22, 0xffffff, 1);
+
+  function step(sys, center, dt, level, fallScale, drift) {
+    sys.pts.material.opacity = level;
+    sys.pts.visible = level > 0.02;
+    if (!sys.pts.visible) return;
+    const p = sys.pos;
+    for (let i = 0; i < sys.count; i++) {
+      const j = i * 3;
+      p[j + 1] -= sys.vel[i] * fallScale * dt;
+      if (drift) p[j] += Math.sin((center.z + p[j + 1]) * 0.7 + i) * drift * dt;
+      if (p[j + 1] < 0) { // reciclar arriba, reubicado alrededor del foco actual
+        p[j] = (sys.rnd() * 2 - 1) * R;
+        p[j + 1] += TOP;
+        p[j + 2] = (sys.rnd() * 2 - 1) * R;
+      }
+    }
+    sys.pts.position.set(center.x, 0, center.z);
+    sys.geo.attributes.position.needsUpdate = true;
+  }
+
+  return {
+    update(fx, dt, center) {
+      step(rain, center, dt, fx.rain, 26, 0);      // lluvia: rapida, vertical
+      step(snow, center, dt, fx.snow, 3.2, 0.5);   // nieve: lenta, con deriva
+    },
   };
 }
 
@@ -318,6 +392,10 @@ export function start(opts = {}) {
     syncAgents(ag, town, GAME);
     eco = createEconomy();
   }
+  // Clima: instala/repara el estado (arranca despejado) con semilla fija. Tras restaurar
+  // un save, si ya trae `weather`, ensureWeather lo respeta (idempotente).
+  ensureWeather(town, GAME, WEATHER_SEED);
+  let curFx = weatherFx(town.weather, GAME.WEATHER);
   const ECON = GAME.ECON;
 
   // ---- Audio cozy (WebAudio sintetizado; nace en silencio hasta el 1er gesto) --
@@ -374,6 +452,7 @@ export function start(opts = {}) {
   const cropGroup = new THREE.Group(); scene.add(cropGroup);     // matas de las granjas
   const cartGroup = new THREE.Group(); scene.add(cartGroup);     // carritos de reparto
   const ghostGroup = new THREE.Group(); scene.add(ghostGroup);   // preview del drag
+  const weatherParticles = createWeatherParticles(scene, THREE, town); // lluvia/nieve
 
   // Materiales dinamicos compartidos (dia/noche los mueve).
   const winGlowMat = new THREE.MeshStandardMaterial({ color: 0xfff2cf, emissive: 0xffd27a, emissiveIntensity: 0, roughness: 0.4 });
@@ -608,10 +687,16 @@ export function start(opts = {}) {
     const sky = rgb(p.sky);
     scene.background = sky;
     scene.fog.color.copy(sky);
-    groundMat.color.copy(rgb(p.ground));
-    ambient.intensity = 0.22 + 0.5 * p.ambient;
-    hemi.intensity = 0.2 + 0.5 * p.sunIntensity;
-    sun.intensity = 0.12 + 1.1 * p.sunIntensity;
+    // Clima: el suelo se mezcla hacia el blanco de la nieve (groundWhite) y el cielo/luz
+    // se atenuan con la tormenta (darken).
+    const gcol = rgb(p.ground);
+    if (curFx.groundWhite > 0) gcol.lerp(new THREE.Color(0.93, 0.95, 1.0), curFx.groundWhite);
+    groundMat.color.copy(gcol);
+    if (curFx.darken > 0) { sky.lerp(new THREE.Color(0.4, 0.43, 0.5), curFx.darken); scene.background = sky; scene.fog.color.copy(sky); }
+    const dk = 1 - 0.7 * curFx.darken;
+    ambient.intensity = (0.22 + 0.5 * p.ambient) * dk;
+    hemi.intensity = (0.2 + 0.5 * p.sunIntensity) * dk;
+    sun.intensity = (0.12 + 1.1 * p.sunIntensity) * dk;
     const ang = (t - 0.25) * Math.PI * 2;
     const rd = Math.max(town.w, town.h);
     sun.position.set(center.x + Math.cos(ang) * rd, Math.max(3, Math.sin(ang) * rd), center.z + 5);
@@ -813,11 +898,18 @@ export function start(opts = {}) {
     if (cost != null) return `modo: ${mode} · ${GAME.TEXTS.money} ${cost}`;
     return `modo: ${mode}`;
   }
+  const WEATHER_ICON = { clear: '☀', rain: '🌧', snow: '❄' };
+  const WEATHER_TEXT = { clear: GAME.TEXTS.weatherClear, rain: GAME.TEXTS.weatherRain, snow: GAME.TEXTS.weatherSnow };
+  function weatherLabel() {
+    const t = town.weather ? town.weather.type : 'clear';
+    return `${WEATHER_ICON[t] || ''} ${WEATHER_TEXT[t] || t}`;
+  }
   function updateHUD() {
     if (!hud) return;
     const money = ECON ? Math.floor(town.money || 0) : 0;
     hud.innerHTML =
       `<span class="hud-clock">${fmtClock()}</span>` +
+      `<span class="hud-weather">${weatherLabel()}</span>` +
       `<span class="hud-pop">poblacion ${ag.residents.length}</span>` +
       (ECON ? `<span class="hud-money">${GAME.TEXTS.money} ${money}</span>` : '') +
       `<span class="hud-mode">${modeLabel()}</span>` +
@@ -878,6 +970,8 @@ export function start(opts = {}) {
     tick(town, dt);
     tickAgents(ag, town, GAME, dt);
     tickEconomy(eco, town, GAME, dt, ag.residents);
+    tickWeather(town, GAME, dt);
+    curFx = weatherFx(town.weather, GAME.WEATHER);
     syncAcc += dt;
     if (syncAcc >= 1) { syncAgents(ag, town, GAME); syncAcc = 0; }
     cropAcc += dt;
@@ -885,6 +979,8 @@ export function start(opts = {}) {
     refreshStructIfChanged();
     updateMovers();
     updateCarts();
+    weatherParticles.update(curFx, dt, camTarget);
+    audio.setRain(curFx.sound);
     applyDayNight();
     updateHUD();
   }
@@ -918,6 +1014,8 @@ export function start(opts = {}) {
 
   // renderOnce: fuerza un render (rAF suspendido con la pestana oculta).
   function renderOnce() {
+    curFx = weatherFx(town.weather, GAME.WEATHER);
+    weatherParticles.update(curFx, 0.15, camTarget);
     refreshStructIfChanged();
     refreshCropsIfChanged();
     updateMovers();
@@ -959,6 +1057,8 @@ export function start(opts = {}) {
     placeAt: (kind, anchors) => placeBlock(town, kind, anchors),
     setMode, save, clearSave,
     audio: { enabled: audio.enabled, toggle: audio.toggle, ctxState: audio.ctxState },
+    // Verificacion del PM: estado del clima + efectos derivados.
+    weather: () => ({ type: town.weather.type, intensity: town.weather.intensity, fx: weatherFx(town.weather, GAME.WEATHER) }),
   };
   window.MT = MT;
   return MT;

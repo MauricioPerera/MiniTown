@@ -174,7 +174,7 @@ function arrive(r, town) {
   r.travel = null;
 }
 function advanceTravel(r, town, dt) {
-  let budget = r.travel.speed * dt;
+  let budget = r.travel.speed * dt * (r.travel.mode === 'walking' ? (town.weatherMods?.walkSpeed ?? 1) : 1);
   const path = r.travel.path;
   while (budget > 1e-12 && r.travel.idx < path.length - 1) {
     const nx = path[r.travel.idx + 1][0], ny = path[r.travel.idx + 1][1];
