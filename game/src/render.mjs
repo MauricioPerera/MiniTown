@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { createTown, placeBlock, tick, buildingAt, isRoad, timeOfDay } from './sim-core.mjs';
 import { createAgents, syncAgents, tickAgents, whoIsAt, residentInfo, carsInTransit } from './agents.mjs';
 import { createEconomy, tickEconomy, cartsInTransit } from './economy.mjs';
-import { paletteAt, buildingVisual, moverVisual, cameraFrame } from './render-core.mjs';
+import { paletteAt, buildingVisual, moverVisual, cameraFrame, voxelBuildingScale } from './render-core.mjs';
 import { dragToAnchors } from './input-core.mjs';
 import { serializeState, restoreState } from './save-core.mjs';
 import { ambientMix, chimeFor } from './audio-core.mjs';
@@ -525,23 +525,32 @@ export function start(opts = {}) {
       // Offset local (desde el centro del footprint) al centro de la celda-casa.
       const ox = isFarm ? FARM_HOUSE_CELL[0] + 0.5 - b.w / 2 : 0;
       const oz = isFarm ? FARM_HOUSE_CELL[1] + 0.5 - b.h / 2 : 0;
-      const bw = isFarm ? 0.9 : b.w * 0.88, bd = isFarm ? 0.9 : b.h * 0.88;
-      const rw = isFarm ? 0.98 : b.w * 0.96, rd = isFarm ? 0.98 : b.h * 0.96;
-      const ww = isFarm ? 0.92 : b.w * 0.9, wd = isFarm ? 0.92 : b.h * 0.9;
       if (isFarm) { // tierra arada bajo todo el lote para leer la parcela
         const soil = box(b.w * 0.96, 0.06, b.h * 0.96, stdMat([150, 120, 86], { roughness: 1 }));
         soil.position.y = 0.03; soil.receiveShadow = true; g.add(soil);
       }
-      const body = box(bw, v.height, bd, stdMat(v.body));
-      body.position.set(ox, v.height / 2, oz); body.castShadow = true; body.receiveShadow = true; g.add(body);
-      const roof = box(rw, 0.3, rd, stdMat(v.roof, { roughness: 0.6 }));
-      roof.position.set(ox, v.height + 0.15, oz); roof.castShadow = true; g.add(roof);
-      const floors = b.level;
-      const winMat = b.occupied ? winGlowMat : winDarkMat;
-      for (let f = 0; f < floors; f++) {
-        const wy = 0.45 + f * (v.height / floors);
-        const strip = box(ww, 0.3, wd, winMat);
-        strip.position.set(ox, wy, oz); g.add(strip);
+      // Modelo voxel del estilo: si existe y escala > 0, reemplaza el cuerpo procedural.
+      const modelStruct = v.model ? GAME.VOXELS[v.model] : null;
+      const modelScale = modelStruct ? voxelBuildingScale(modelStruct.bounds, b.w, b.h, v.height) : 0;
+      if (modelScale > 0) {
+        const inst = prefabInstance(v.model, modelScale); // centra el modelo y apoya su base en y=0
+        inst.position.set(ox, 0, oz);
+        g.add(inst);
+      } else {
+        const bw = isFarm ? 0.9 : b.w * 0.88, bd = isFarm ? 0.9 : b.h * 0.88;
+        const rw = isFarm ? 0.98 : b.w * 0.96, rd = isFarm ? 0.98 : b.h * 0.96;
+        const ww = isFarm ? 0.92 : b.w * 0.9, wd = isFarm ? 0.92 : b.h * 0.9;
+        const body = box(bw, v.height, bd, stdMat(v.body));
+        body.position.set(ox, v.height / 2, oz); body.castShadow = true; body.receiveShadow = true; g.add(body);
+        const roof = box(rw, 0.3, rd, stdMat(v.roof, { roughness: 0.6 }));
+        roof.position.set(ox, v.height + 0.15, oz); roof.castShadow = true; g.add(roof);
+        const floors = b.level;
+        const winMat = b.occupied ? winGlowMat : winDarkMat;
+        for (let f = 0; f < floors; f++) {
+          const wy = 0.45 + f * (v.height / floors);
+          const strip = box(ww, 0.3, wd, winMat);
+          strip.position.set(ox, wy, oz); g.add(strip);
+        }
       }
     }
     g.traverse(o => { if (o.isMesh) o.userData.bid = b.id; });
