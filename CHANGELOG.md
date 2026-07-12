@@ -2,6 +2,16 @@
 
 All notable changes to the KDD Template are documented here.
 
+## MiniTown v0.2.0 — 2026-07-12
+
+Los edificios de MiniTown pasan a ser dato con estilo: modelos voxel por kind y nivel que el motor elige y dibuja escalados al lote, con un editor visual integrado para modelarlos sin escribir YAML a mano. Todo siguió la disciplina del repo: cada pieza contra su oráculo congelado y sellado por hash.
+
+- Estilos voxel de edificios como dato: nueva colección `buildingModels` en `game/GAME.md` (por kind, estilos `{ name, perLevel }` que referencian structures), validada por el perfil `minitown` (regla `mt-building-models`) y derivada a `BUILDING_MODELS`. El render elige un modelo determinista por `(kind, variant)` y nivel, y lo dibuja escalado al lote con fallback procedural intacto cuando el kind no trae modelos.
+- Contenido demo: dos estilos residenciales completos (`terracota` y `nordica`, 6 casas voxel de 3 niveles cada uno) definidos SOLO como dato, con altura creciente para que el progreso de obra se lea.
+- Editor voxel integrado (`game/voxel-editor.html`): paleta desde `GAME.MATERIALS`, import de prefabs y export de líneas YAML listas para pegar en GAME.md, sobre el núcleo puro `game/src/editor-core.mjs`.
+- Guía nueva [`docs/generar-elementos.md`](docs/generar-elementos.md): cómo una IA o un humano genera edificios y props con estilos, por el flujo editar → sellar → lint → export → test o por el editor visual.
+- Seis contratos nuevos con oráculos congelados y sellados por hash (`minitown-building-models`, `minitown-render-styles`, `minitown-render-voxel-buildings`, `minitown-editor-core`, `minitown-voxel-editor`, `minitown-styled-content`).
+
 ## v1.5.0 — 2026-07-08
 
 A benchmark tool for the template's own health, and two gates that measure a mechanical/judgment boundary outside code for the first time — a web page (C30) and a git commit message (C31) — both designed by reading a real, widely-adopted third party before building, not by inventing rules from scratch.

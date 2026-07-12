@@ -34,18 +34,30 @@ export function paletteAt(game, t) {
   };
 }
 
+// Estilo voxel elegido deterministicamente por variant (modulo protegido, igual que VARIANTS).
+// Devuelve { model, styleName } o { model: null, styleName: null } si el kind no tiene modelos.
+function styleFor(game, kind, level, variant) {
+  const styles = game.BUILDING_MODELS ? game.BUILDING_MODELS[kind] : null;
+  if (!styles || styles.length === 0) return { model: null, styleName: null };
+  const style = styles[((variant % styles.length) + styles.length) % styles.length];
+  return { model: style.perLevel[level - 1], styleName: style.name };
+}
+
 export function buildingVisual(game, building) {
   const { kind, level, stage, variant } = building;
   const variants = game.VARIANTS[kind];
   const v = variants[((variant % variants.length) + variants.length) % variants.length];
   const heightPerLevel = game.KINDS[kind].heightPerLevel;
   const base = heightPerLevel[level - 1];
+  const style = styleFor(game, kind, level, variant);
   return {
     height: base * stageFactor(stage),
     body: v.body,
     roof: v.roof,
     trim: v.trim,
     stage: String(stage),
+    model: style.model,
+    styleName: style.styleName,
   };
 }
 
@@ -55,6 +67,17 @@ export function moverVisual(game, type, id) {
   const n = keys.length;
   const idx = ((id % n) + n) % n;
   return keys[idx];
+}
+
+// Escala UNIFORME para dibujar un modelo voxel de edificio dentro de su footprint.
+// bounds = { min:[x,y,z], max:[x,y,z] } o null. Dimensiones del modelo: m = max-min+1 por eje.
+// Pura, nunca lanza: bounds null => 0.
+export function voxelBuildingScale(bounds, w, d, height) {
+  if (!bounds) return 0;
+  const mw = bounds.max[0] - bounds.min[0] + 1;
+  const mh = bounds.max[1] - bounds.min[1] + 1;
+  const md = bounds.max[2] - bounds.min[2] + 1;
+  return Math.min(w * 0.9 / mw, d * 0.9 / md, height / mh);
 }
 
 export function cameraFrame(town) {

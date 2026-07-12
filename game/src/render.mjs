@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { createTown, placeBlock, tick, buildingAt, isRoad, timeOfDay } from './sim-core.mjs';
 import { createAgents, syncAgents, tickAgents, whoIsAt, residentInfo, carsInTransit } from './agents.mjs';
 import { createEconomy, tickEconomy, cartsInTransit } from './economy.mjs';
-import { paletteAt, buildingVisual, moverVisual, cameraFrame } from './render-core.mjs';
+import { paletteAt, buildingVisual, moverVisual, cameraFrame, voxelBuildingScale } from './render-core.mjs';
 import { dragToAnchors } from './input-core.mjs';
 import { serializeState, restoreState } from './save-core.mjs';
 import { ambientMix, chimeFor } from './audio-core.mjs';
@@ -503,49 +503,72 @@ export function start(opts = {}) {
     g.position.set(cxw, 0, czw);
     g.userData.bid = b.id;
 
-    if (v.stage === 'foundation') {
-      const slab = box(b.w * 0.9, 0.2, b.h * 0.9, stdMat([185, 178, 166], { roughness: 1 }));
-      slab.position.y = 0.1; slab.receiveShadow = true; slab.castShadow = true;
-      g.add(slab);
-    } else if (v.stage === 'frame') {
-      const slab = box(b.w * 0.9, 0.16, b.h * 0.9, stdMat([185, 178, 166], { roughness: 1 }));
-      slab.position.y = 0.08; slab.receiveShadow = true; g.add(slab);
-      const beam = stdMat(v.trim, { roughness: 0.8 });
-      const px = (b.w / 2) * 0.78, pz = (b.h / 2) * 0.78;
-      for (const sx of [-px, px]) for (const sz of [-pz, pz]) {
-        const col = box(0.16, v.height, 0.16, beam);
-        col.position.set(sx, v.height / 2, sz); col.castShadow = true; g.add(col);
-      }
-      const top = box(b.w * 0.84, 0.16, b.h * 0.84, beam);
-      top.position.y = v.height; g.add(top);
-    } else {
-      // Granja: la casa ocupa SOLO la celda esquina del lote (deja las otras 3
-      // celdas libres para el campo de cultivos). El resto de kinds: cuerpo pleno.
-      const isFarm = b.kind === 'farm';
-      // Offset local (desde el centro del footprint) al centro de la celda-casa.
-      const ox = isFarm ? FARM_HOUSE_CELL[0] + 0.5 - b.w / 2 : 0;
-      const oz = isFarm ? FARM_HOUSE_CELL[1] + 0.5 - b.h / 2 : 0;
-      const bw = isFarm ? 0.9 : b.w * 0.88, bd = isFarm ? 0.9 : b.h * 0.88;
-      const rw = isFarm ? 0.98 : b.w * 0.96, rd = isFarm ? 0.98 : b.h * 0.96;
-      const ww = isFarm ? 0.92 : b.w * 0.9, wd = isFarm ? 0.92 : b.h * 0.9;
-      if (isFarm) { // tierra arada bajo todo el lote para leer la parcela
-        const soil = box(b.w * 0.96, 0.06, b.h * 0.96, stdMat([150, 120, 86], { roughness: 1 }));
-        soil.position.y = 0.03; soil.receiveShadow = true; g.add(soil);
-      }
-      const body = box(bw, v.height, bd, stdMat(v.body));
-      body.position.set(ox, v.height / 2, oz); body.castShadow = true; body.receiveShadow = true; g.add(body);
-      const roof = box(rw, 0.3, rd, stdMat(v.roof, { roughness: 0.6 }));
-      roof.position.set(ox, v.height + 0.15, oz); roof.castShadow = true; g.add(roof);
-      const floors = b.level;
-      const winMat = b.occupied ? winGlowMat : winDarkMat;
-      for (let f = 0; f < floors; f++) {
-        const wy = 0.45 + f * (v.height / floors);
-        const strip = box(ww, 0.3, wd, winMat);
-        strip.position.set(ox, wy, oz); g.add(strip);
-      }
-    }
+    if (v.stage === 'foundation') buildFoundation(b, v, g);
+    else if (v.stage === 'frame') buildFrame(b, v, g);
+    else buildBuilt(b, v, g);
+
     g.traverse(o => { if (o.isMesh) o.userData.bid = b.id; });
     return g;
+  }
+
+  function buildFoundation(b, v, g) {
+    const slab = box(b.w * 0.9, 0.2, b.h * 0.9, stdMat([185, 178, 166], { roughness: 1 }));
+    slab.position.y = 0.1; slab.receiveShadow = true; slab.castShadow = true;
+    g.add(slab);
+  }
+
+  function buildFrame(b, v, g) {
+    const slab = box(b.w * 0.9, 0.16, b.h * 0.9, stdMat([185, 178, 166], { roughness: 1 }));
+    slab.position.y = 0.08; slab.receiveShadow = true; g.add(slab);
+    const beam = stdMat(v.trim, { roughness: 0.8 });
+    const px = (b.w / 2) * 0.78, pz = (b.h / 2) * 0.78;
+    for (const sx of [-px, px]) for (const sz of [-pz, pz]) {
+      const col = box(0.16, v.height, 0.16, beam);
+      col.position.set(sx, v.height / 2, sz); col.castShadow = true; g.add(col);
+    }
+    const top = box(b.w * 0.84, 0.16, b.h * 0.84, beam);
+    top.position.y = v.height; g.add(top);
+  }
+
+  function buildBuilt(b, v, g) {
+    // Granja: la casa ocupa SOLO la celda esquina del lote (deja las otras 3
+    // celdas libres para el campo de cultivos). El resto de kinds: cuerpo pleno.
+    const isFarm = b.kind === 'farm';
+    // Offset local (desde el centro del footprint) al centro de la celda-casa.
+    const ox = isFarm ? FARM_HOUSE_CELL[0] + 0.5 - b.w / 2 : 0;
+    const oz = isFarm ? FARM_HOUSE_CELL[1] + 0.5 - b.h / 2 : 0;
+    if (isFarm) { // tierra arada bajo todo el lote para leer la parcela
+      const soil = box(b.w * 0.96, 0.06, b.h * 0.96, stdMat([150, 120, 86], { roughness: 1 }));
+      soil.position.y = 0.03; soil.receiveShadow = true; g.add(soil);
+    }
+    // Modelo voxel del estilo: si existe y escala > 0, reemplaza el cuerpo procedural.
+    const modelStruct = v.model ? GAME.VOXELS[v.model] : null;
+    const modelScale = modelStruct ? voxelBuildingScale(modelStruct.bounds, b.w, b.h, v.height) : 0;
+    if (modelScale > 0) {
+      const inst = prefabInstance(v.model, modelScale); // centra el modelo y apoya su base en y=0
+      inst.position.set(ox, 0, oz);
+      g.add(inst);
+    } else {
+      buildProceduralBody(b, v, g, ox, oz);
+    }
+  }
+
+  function buildProceduralBody(b, v, g, ox, oz) {
+    const isFarm = b.kind === 'farm';
+    const bw = isFarm ? 0.9 : b.w * 0.88, bd = isFarm ? 0.9 : b.h * 0.88;
+    const rw = isFarm ? 0.98 : b.w * 0.96, rd = isFarm ? 0.98 : b.h * 0.96;
+    const ww = isFarm ? 0.92 : b.w * 0.9, wd = isFarm ? 0.92 : b.h * 0.9;
+    const body = box(bw, v.height, bd, stdMat(v.body));
+    body.position.set(ox, v.height / 2, oz); body.castShadow = true; body.receiveShadow = true; g.add(body);
+    const roof = box(rw, 0.3, rd, stdMat(v.roof, { roughness: 0.6 }));
+    roof.position.set(ox, v.height + 0.15, oz); roof.castShadow = true; g.add(roof);
+    const floors = b.level;
+    const winMat = b.occupied ? winGlowMat : winDarkMat;
+    for (let f = 0; f < floors; f++) {
+      const wy = 0.45 + f * (v.height / floors);
+      const strip = box(ww, 0.3, wd, winMat);
+      strip.position.set(ox, wy, oz); g.add(strip);
+    }
   }
 
   function buildRoadTile(x, y) {
