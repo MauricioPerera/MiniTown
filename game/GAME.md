@@ -2,7 +2,7 @@
 version: '0.1'
 name: MiniTown
 profile: minitown
-dataSha256: '0e77c48abdd0448aee6269a11082e66a55c8bef59a6ec0565e834e26821f9c7d'
+dataSha256: 'aef914311b52929c5fd8c35b24012b4d6133dafabe970473a4fab95d93901fb8'
 buildingKinds:
   residential: { capacityPerLevel: [2, 4, 6], heightPerLevel: [2, 4, 6] }
   shop: { capacityPerLevel: [3, 5, 8], heightPerLevel: [2, 3, 5] }
@@ -17,6 +17,8 @@ buildingVariants:
   farm: [{ body: [126, 176, 96], roof: [140, 100, 60], trim: [206, 186, 146] }, { body: [146, 190, 112], roof: [158, 116, 72], trim: [220, 202, 162] }, { body: [108, 158, 82], roof: [124, 88, 52], trim: [194, 172, 132] }]
   warehouse: [{ body: [150, 152, 158], roof: [120, 92, 62], trim: [186, 188, 194] }, { body: [168, 170, 176], roof: [136, 104, 70], trim: [202, 204, 210] }, { body: [132, 134, 142], roof: [106, 80, 54], trim: [172, 174, 182] }]
   market: [{ body: [232, 152, 74], roof: [214, 92, 62], trim: [255, 226, 190] }, { body: [244, 170, 96], roof: [226, 108, 78], trim: [255, 234, 204] }, { body: [214, 132, 58], roof: [196, 76, 50], trim: [250, 214, 176] }]
+buildingModels:
+  residential: [{ name: terracota, perLevel: [casa_terra_l1, casa_terra_l2, casa_terra_l3] }, { name: nordica, perLevel: [casa_nord_l1, casa_nord_l2, casa_nord_l3] }]
 stages:
   foundation: { durationSec: 4 }
   frame: { durationSec: 6 }
@@ -120,6 +122,11 @@ materials:
   CROP: { color: [110, 175, 85] }
   FRUIT: { color: [220, 90, 70] }
   CART: { color: [165, 115, 70] }
+  WALL_TERRA: { color: [214, 132, 92] }
+  ROOF_BROWN: { color: [150, 66, 48] }
+  WALL_WHITE: { color: [235, 236, 232] }
+  ROOF_SLATE: { color: [72, 80, 96] }
+  WOOD_NORD: { color: [176, 138, 96] }
 prefabs:
   person_a: { size: [1, 4, 1], cells: [{ x: 0, y: 0, z: 0, m: PANTS_DARK }, { x: 0, y: 1, z: 0, m: SHIRT_RED }, { x: 0, y: 2, z: 0, m: SKIN }, { x: 0, y: 3, z: 0, m: HAIR_BROWN }] }
   person_b: { size: [1, 4, 1], cells: [{ x: 0, y: 0, z: 0, m: PANTS_BLUE }, { x: 0, y: 1, z: 0, m: SHIRT_BLUE }, { x: 0, y: 2, z: 0, m: SKIN2 }, { x: 0, y: 3, z: 0, m: HAIR_BLACK }] }
@@ -132,6 +139,12 @@ prefabs:
   cart: { size: [2, 2, 1], cells: [{ x: 0, y: 0, z: 0, m: WHEEL }, { x: 1, y: 0, z: 0, m: WHEEL }, { x: 0, y: 1, z: 0, m: CART }, { x: 1, y: 1, z: 0, m: CART }] }
   streetlight: { size: [1, 3, 1], cells: [{ x: 0, y: 0, z: 0, m: METAL }, { x: 0, y: 1, z: 0, m: METAL }, { x: 0, y: 2, z: 0, m: LAMP }] }
   tree: { size: [3, 5, 3], cells: [{ x: 1, y: 0, z: 1, m: TRUNK }, { x: 1, y: 1, z: 1, m: TRUNK }, { x: 0, y: 2, z: 0, m: LEAF }, { x: 1, y: 2, z: 0, m: LEAF }, { x: 2, y: 2, z: 0, m: LEAF }, { x: 0, y: 2, z: 1, m: LEAF }, { x: 1, y: 2, z: 1, m: LEAF }, { x: 2, y: 2, z: 1, m: LEAF }, { x: 0, y: 2, z: 2, m: LEAF }, { x: 1, y: 2, z: 2, m: LEAF }, { x: 2, y: 2, z: 2, m: LEAF }, { x: 0, y: 3, z: 0, m: LEAF }, { x: 1, y: 3, z: 0, m: LEAF }, { x: 2, y: 3, z: 0, m: LEAF }, { x: 0, y: 3, z: 1, m: LEAF }, { x: 1, y: 3, z: 1, m: LEAF }, { x: 2, y: 3, z: 1, m: LEAF }, { x: 0, y: 3, z: 2, m: LEAF }, { x: 1, y: 3, z: 2, m: LEAF }, { x: 2, y: 3, z: 2, m: LEAF }, { x: 1, y: 4, z: 0, m: LEAF }, { x: 0, y: 4, z: 1, m: LEAF }, { x: 1, y: 4, z: 1, m: LEAF }, { x: 2, y: 4, z: 1, m: LEAF }, { x: 1, y: 4, z: 2, m: LEAF }] }
+  casa_terra_l1: { size: [4, 4, 4], fill: WALL_TERRA, cells: [{ x: 0, y: 3, z: 0, m: ROOF_BROWN }, { x: 0, y: 3, z: 1, m: ROOF_BROWN }, { x: 0, y: 3, z: 2, m: ROOF_BROWN }, { x: 0, y: 3, z: 3, m: ROOF_BROWN }, { x: 1, y: 3, z: 0, m: ROOF_BROWN }, { x: 1, y: 3, z: 1, m: ROOF_BROWN }, { x: 1, y: 3, z: 2, m: ROOF_BROWN }, { x: 1, y: 3, z: 3, m: ROOF_BROWN }, { x: 2, y: 3, z: 0, m: ROOF_BROWN }, { x: 2, y: 3, z: 1, m: ROOF_BROWN }, { x: 2, y: 3, z: 2, m: ROOF_BROWN }, { x: 2, y: 3, z: 3, m: ROOF_BROWN }, { x: 3, y: 3, z: 0, m: ROOF_BROWN }, { x: 3, y: 3, z: 1, m: ROOF_BROWN }, { x: 3, y: 3, z: 2, m: ROOF_BROWN }, { x: 3, y: 3, z: 3, m: ROOF_BROWN }, { x: 2, y: 0, z: 0, m: TRUNK }, { x: 2, y: 1, z: 0, m: TRUNK }, { x: 1, y: 1, z: 0, m: GLASS }, { x: 3, y: 1, z: 0, m: GLASS }, { x: 0, y: 1, z: 2, m: GLASS }, { x: 3, y: 1, z: 2, m: GLASS }, { x: 2, y: 1, z: 3, m: GLASS }] }
+  casa_terra_l2: { size: [4, 6, 4], fill: WALL_TERRA, cells: [{ x: 0, y: 4, z: 0, m: ROOF_BROWN }, { x: 0, y: 4, z: 1, m: ROOF_BROWN }, { x: 0, y: 4, z: 2, m: ROOF_BROWN }, { x: 0, y: 4, z: 3, m: ROOF_BROWN }, { x: 1, y: 4, z: 0, m: ROOF_BROWN }, { x: 1, y: 4, z: 1, m: ROOF_BROWN }, { x: 1, y: 4, z: 2, m: ROOF_BROWN }, { x: 1, y: 4, z: 3, m: ROOF_BROWN }, { x: 2, y: 4, z: 0, m: ROOF_BROWN }, { x: 2, y: 4, z: 1, m: ROOF_BROWN }, { x: 2, y: 4, z: 2, m: ROOF_BROWN }, { x: 2, y: 4, z: 3, m: ROOF_BROWN }, { x: 3, y: 4, z: 0, m: ROOF_BROWN }, { x: 3, y: 4, z: 1, m: ROOF_BROWN }, { x: 3, y: 4, z: 2, m: ROOF_BROWN }, { x: 3, y: 4, z: 3, m: ROOF_BROWN }, { x: 0, y: 5, z: 0, m: ROOF_BROWN }, { x: 0, y: 5, z: 1, m: ROOF_BROWN }, { x: 0, y: 5, z: 2, m: ROOF_BROWN }, { x: 0, y: 5, z: 3, m: ROOF_BROWN }, { x: 1, y: 5, z: 0, m: ROOF_BROWN }, { x: 1, y: 5, z: 1, m: ROOF_BROWN }, { x: 1, y: 5, z: 2, m: ROOF_BROWN }, { x: 1, y: 5, z: 3, m: ROOF_BROWN }, { x: 2, y: 5, z: 0, m: ROOF_BROWN }, { x: 2, y: 5, z: 1, m: ROOF_BROWN }, { x: 2, y: 5, z: 2, m: ROOF_BROWN }, { x: 2, y: 5, z: 3, m: ROOF_BROWN }, { x: 3, y: 5, z: 0, m: ROOF_BROWN }, { x: 3, y: 5, z: 1, m: ROOF_BROWN }, { x: 3, y: 5, z: 2, m: ROOF_BROWN }, { x: 3, y: 5, z: 3, m: ROOF_BROWN }, { x: 2, y: 0, z: 0, m: TRUNK }, { x: 2, y: 1, z: 0, m: TRUNK }, { x: 1, y: 1, z: 0, m: GLASS }, { x: 3, y: 1, z: 0, m: GLASS }, { x: 0, y: 1, z: 2, m: GLASS }, { x: 3, y: 1, z: 2, m: GLASS }, { x: 2, y: 1, z: 3, m: GLASS }, { x: 1, y: 3, z: 0, m: GLASS }, { x: 3, y: 3, z: 0, m: GLASS }, { x: 0, y: 3, z: 2, m: GLASS }, { x: 3, y: 3, z: 2, m: GLASS }, { x: 2, y: 3, z: 3, m: GLASS }] }
+  casa_terra_l3: { size: [5, 8, 5], fill: WALL_TERRA, cells: [{ x: 0, y: 6, z: 0, m: ROOF_BROWN }, { x: 0, y: 6, z: 1, m: ROOF_BROWN }, { x: 0, y: 6, z: 2, m: ROOF_BROWN }, { x: 0, y: 6, z: 3, m: ROOF_BROWN }, { x: 0, y: 6, z: 4, m: ROOF_BROWN }, { x: 1, y: 6, z: 0, m: ROOF_BROWN }, { x: 1, y: 6, z: 1, m: ROOF_BROWN }, { x: 1, y: 6, z: 2, m: ROOF_BROWN }, { x: 1, y: 6, z: 3, m: ROOF_BROWN }, { x: 1, y: 6, z: 4, m: ROOF_BROWN }, { x: 2, y: 6, z: 0, m: ROOF_BROWN }, { x: 2, y: 6, z: 1, m: ROOF_BROWN }, { x: 2, y: 6, z: 2, m: ROOF_BROWN }, { x: 2, y: 6, z: 3, m: ROOF_BROWN }, { x: 2, y: 6, z: 4, m: ROOF_BROWN }, { x: 3, y: 6, z: 0, m: ROOF_BROWN }, { x: 3, y: 6, z: 1, m: ROOF_BROWN }, { x: 3, y: 6, z: 2, m: ROOF_BROWN }, { x: 3, y: 6, z: 3, m: ROOF_BROWN }, { x: 3, y: 6, z: 4, m: ROOF_BROWN }, { x: 4, y: 6, z: 0, m: ROOF_BROWN }, { x: 4, y: 6, z: 1, m: ROOF_BROWN }, { x: 4, y: 6, z: 2, m: ROOF_BROWN }, { x: 4, y: 6, z: 3, m: ROOF_BROWN }, { x: 4, y: 6, z: 4, m: ROOF_BROWN }, { x: 0, y: 7, z: 0, m: ROOF_BROWN }, { x: 0, y: 7, z: 1, m: ROOF_BROWN }, { x: 0, y: 7, z: 2, m: ROOF_BROWN }, { x: 0, y: 7, z: 3, m: ROOF_BROWN }, { x: 0, y: 7, z: 4, m: ROOF_BROWN }, { x: 1, y: 7, z: 0, m: ROOF_BROWN }, { x: 1, y: 7, z: 1, m: ROOF_BROWN }, { x: 1, y: 7, z: 2, m: ROOF_BROWN }, { x: 1, y: 7, z: 3, m: ROOF_BROWN }, { x: 1, y: 7, z: 4, m: ROOF_BROWN }, { x: 2, y: 7, z: 0, m: ROOF_BROWN }, { x: 2, y: 7, z: 1, m: ROOF_BROWN }, { x: 2, y: 7, z: 2, m: ROOF_BROWN }, { x: 2, y: 7, z: 3, m: ROOF_BROWN }, { x: 2, y: 7, z: 4, m: ROOF_BROWN }, { x: 3, y: 7, z: 0, m: ROOF_BROWN }, { x: 3, y: 7, z: 1, m: ROOF_BROWN }, { x: 3, y: 7, z: 2, m: ROOF_BROWN }, { x: 3, y: 7, z: 3, m: ROOF_BROWN }, { x: 3, y: 7, z: 4, m: ROOF_BROWN }, { x: 4, y: 7, z: 0, m: ROOF_BROWN }, { x: 4, y: 7, z: 1, m: ROOF_BROWN }, { x: 4, y: 7, z: 2, m: ROOF_BROWN }, { x: 4, y: 7, z: 3, m: ROOF_BROWN }, { x: 4, y: 7, z: 4, m: ROOF_BROWN }, { x: 2, y: 0, z: 0, m: TRUNK }, { x: 2, y: 1, z: 0, m: TRUNK }, { x: 2, y: 2, z: 0, m: TRUNK }, { x: 1, y: 1, z: 0, m: GLASS }, { x: 3, y: 1, z: 0, m: GLASS }, { x: 0, y: 1, z: 2, m: GLASS }, { x: 4, y: 1, z: 2, m: GLASS }, { x: 2, y: 1, z: 4, m: GLASS }, { x: 1, y: 3, z: 0, m: GLASS }, { x: 3, y: 3, z: 0, m: GLASS }, { x: 0, y: 3, z: 2, m: GLASS }, { x: 4, y: 3, z: 2, m: GLASS }, { x: 2, y: 3, z: 4, m: GLASS }, { x: 1, y: 5, z: 0, m: GLASS }, { x: 3, y: 5, z: 0, m: GLASS }, { x: 0, y: 5, z: 2, m: GLASS }, { x: 4, y: 5, z: 2, m: GLASS }, { x: 2, y: 5, z: 4, m: GLASS }] }
+  casa_nord_l1: { size: [4, 5, 4], fill: WALL_WHITE, cells: [{ x: 0, y: 4, z: 0, m: ROOF_SLATE }, { x: 0, y: 4, z: 1, m: ROOF_SLATE }, { x: 0, y: 4, z: 2, m: ROOF_SLATE }, { x: 0, y: 4, z: 3, m: ROOF_SLATE }, { x: 1, y: 4, z: 0, m: ROOF_SLATE }, { x: 1, y: 4, z: 1, m: ROOF_SLATE }, { x: 1, y: 4, z: 2, m: ROOF_SLATE }, { x: 1, y: 4, z: 3, m: ROOF_SLATE }, { x: 2, y: 4, z: 0, m: ROOF_SLATE }, { x: 2, y: 4, z: 1, m: ROOF_SLATE }, { x: 2, y: 4, z: 2, m: ROOF_SLATE }, { x: 2, y: 4, z: 3, m: ROOF_SLATE }, { x: 3, y: 4, z: 0, m: ROOF_SLATE }, { x: 3, y: 4, z: 1, m: ROOF_SLATE }, { x: 3, y: 4, z: 2, m: ROOF_SLATE }, { x: 3, y: 4, z: 3, m: ROOF_SLATE }, { x: 2, y: 0, z: 0, m: WOOD_NORD }, { x: 2, y: 1, z: 0, m: WOOD_NORD }, { x: 1, y: 1, z: 0, m: GLASS }, { x: 3, y: 1, z: 0, m: GLASS }, { x: 0, y: 1, z: 2, m: GLASS }, { x: 3, y: 1, z: 2, m: GLASS }, { x: 2, y: 1, z: 3, m: GLASS }, { x: 1, y: 3, z: 0, m: GLASS }, { x: 3, y: 3, z: 0, m: GLASS }, { x: 0, y: 3, z: 2, m: GLASS }, { x: 3, y: 3, z: 2, m: GLASS }, { x: 2, y: 3, z: 3, m: GLASS }] }
+  casa_nord_l2: { size: [4, 7, 4], fill: WALL_WHITE, cells: [{ x: 0, y: 5, z: 0, m: ROOF_SLATE }, { x: 0, y: 5, z: 1, m: ROOF_SLATE }, { x: 0, y: 5, z: 2, m: ROOF_SLATE }, { x: 0, y: 5, z: 3, m: ROOF_SLATE }, { x: 1, y: 5, z: 0, m: ROOF_SLATE }, { x: 1, y: 5, z: 1, m: ROOF_SLATE }, { x: 1, y: 5, z: 2, m: ROOF_SLATE }, { x: 1, y: 5, z: 3, m: ROOF_SLATE }, { x: 2, y: 5, z: 0, m: ROOF_SLATE }, { x: 2, y: 5, z: 1, m: ROOF_SLATE }, { x: 2, y: 5, z: 2, m: ROOF_SLATE }, { x: 2, y: 5, z: 3, m: ROOF_SLATE }, { x: 3, y: 5, z: 0, m: ROOF_SLATE }, { x: 3, y: 5, z: 1, m: ROOF_SLATE }, { x: 3, y: 5, z: 2, m: ROOF_SLATE }, { x: 3, y: 5, z: 3, m: ROOF_SLATE }, { x: 0, y: 6, z: 0, m: ROOF_SLATE }, { x: 0, y: 6, z: 1, m: ROOF_SLATE }, { x: 0, y: 6, z: 2, m: ROOF_SLATE }, { x: 0, y: 6, z: 3, m: ROOF_SLATE }, { x: 1, y: 6, z: 0, m: ROOF_SLATE }, { x: 1, y: 6, z: 1, m: ROOF_SLATE }, { x: 1, y: 6, z: 2, m: ROOF_SLATE }, { x: 1, y: 6, z: 3, m: ROOF_SLATE }, { x: 2, y: 6, z: 0, m: ROOF_SLATE }, { x: 2, y: 6, z: 1, m: ROOF_SLATE }, { x: 2, y: 6, z: 2, m: ROOF_SLATE }, { x: 2, y: 6, z: 3, m: ROOF_SLATE }, { x: 3, y: 6, z: 0, m: ROOF_SLATE }, { x: 3, y: 6, z: 1, m: ROOF_SLATE }, { x: 3, y: 6, z: 2, m: ROOF_SLATE }, { x: 3, y: 6, z: 3, m: ROOF_SLATE }, { x: 2, y: 0, z: 0, m: WOOD_NORD }, { x: 2, y: 1, z: 0, m: WOOD_NORD }, { x: 1, y: 1, z: 0, m: GLASS }, { x: 3, y: 1, z: 0, m: GLASS }, { x: 0, y: 1, z: 2, m: GLASS }, { x: 3, y: 1, z: 2, m: GLASS }, { x: 2, y: 1, z: 3, m: GLASS }, { x: 1, y: 3, z: 0, m: GLASS }, { x: 3, y: 3, z: 0, m: GLASS }, { x: 0, y: 3, z: 2, m: GLASS }, { x: 3, y: 3, z: 2, m: GLASS }, { x: 2, y: 3, z: 3, m: GLASS }] }
+  casa_nord_l3: { size: [5, 9, 5], fill: WALL_WHITE, cells: [{ x: 0, y: 7, z: 0, m: ROOF_SLATE }, { x: 0, y: 7, z: 1, m: ROOF_SLATE }, { x: 0, y: 7, z: 2, m: ROOF_SLATE }, { x: 0, y: 7, z: 3, m: ROOF_SLATE }, { x: 0, y: 7, z: 4, m: ROOF_SLATE }, { x: 1, y: 7, z: 0, m: ROOF_SLATE }, { x: 1, y: 7, z: 1, m: ROOF_SLATE }, { x: 1, y: 7, z: 2, m: ROOF_SLATE }, { x: 1, y: 7, z: 3, m: ROOF_SLATE }, { x: 1, y: 7, z: 4, m: ROOF_SLATE }, { x: 2, y: 7, z: 0, m: ROOF_SLATE }, { x: 2, y: 7, z: 1, m: ROOF_SLATE }, { x: 2, y: 7, z: 2, m: ROOF_SLATE }, { x: 2, y: 7, z: 3, m: ROOF_SLATE }, { x: 2, y: 7, z: 4, m: ROOF_SLATE }, { x: 3, y: 7, z: 0, m: ROOF_SLATE }, { x: 3, y: 7, z: 1, m: ROOF_SLATE }, { x: 3, y: 7, z: 2, m: ROOF_SLATE }, { x: 3, y: 7, z: 3, m: ROOF_SLATE }, { x: 3, y: 7, z: 4, m: ROOF_SLATE }, { x: 4, y: 7, z: 0, m: ROOF_SLATE }, { x: 4, y: 7, z: 1, m: ROOF_SLATE }, { x: 4, y: 7, z: 2, m: ROOF_SLATE }, { x: 4, y: 7, z: 3, m: ROOF_SLATE }, { x: 4, y: 7, z: 4, m: ROOF_SLATE }, { x: 0, y: 8, z: 0, m: ROOF_SLATE }, { x: 0, y: 8, z: 1, m: ROOF_SLATE }, { x: 0, y: 8, z: 2, m: ROOF_SLATE }, { x: 0, y: 8, z: 3, m: ROOF_SLATE }, { x: 0, y: 8, z: 4, m: ROOF_SLATE }, { x: 1, y: 8, z: 0, m: ROOF_SLATE }, { x: 1, y: 8, z: 1, m: ROOF_SLATE }, { x: 1, y: 8, z: 2, m: ROOF_SLATE }, { x: 1, y: 8, z: 3, m: ROOF_SLATE }, { x: 1, y: 8, z: 4, m: ROOF_SLATE }, { x: 2, y: 8, z: 0, m: ROOF_SLATE }, { x: 2, y: 8, z: 1, m: ROOF_SLATE }, { x: 2, y: 8, z: 2, m: ROOF_SLATE }, { x: 2, y: 8, z: 3, m: ROOF_SLATE }, { x: 2, y: 8, z: 4, m: ROOF_SLATE }, { x: 3, y: 8, z: 0, m: ROOF_SLATE }, { x: 3, y: 8, z: 1, m: ROOF_SLATE }, { x: 3, y: 8, z: 2, m: ROOF_SLATE }, { x: 3, y: 8, z: 3, m: ROOF_SLATE }, { x: 3, y: 8, z: 4, m: ROOF_SLATE }, { x: 4, y: 8, z: 0, m: ROOF_SLATE }, { x: 4, y: 8, z: 1, m: ROOF_SLATE }, { x: 4, y: 8, z: 2, m: ROOF_SLATE }, { x: 4, y: 8, z: 3, m: ROOF_SLATE }, { x: 4, y: 8, z: 4, m: ROOF_SLATE }, { x: 2, y: 0, z: 0, m: WOOD_NORD }, { x: 2, y: 1, z: 0, m: WOOD_NORD }, { x: 2, y: 2, z: 0, m: WOOD_NORD }, { x: 1, y: 1, z: 0, m: GLASS }, { x: 3, y: 1, z: 0, m: GLASS }, { x: 0, y: 1, z: 2, m: GLASS }, { x: 4, y: 1, z: 2, m: GLASS }, { x: 2, y: 1, z: 4, m: GLASS }, { x: 1, y: 3, z: 0, m: GLASS }, { x: 3, y: 3, z: 0, m: GLASS }, { x: 0, y: 3, z: 2, m: GLASS }, { x: 4, y: 3, z: 2, m: GLASS }, { x: 2, y: 3, z: 4, m: GLASS }, { x: 1, y: 5, z: 0, m: GLASS }, { x: 3, y: 5, z: 0, m: GLASS }, { x: 0, y: 5, z: 2, m: GLASS }, { x: 4, y: 5, z: 2, m: GLASS }, { x: 2, y: 5, z: 4, m: GLASS }] }
 structures:
   person_a: { place: [{ prefab: person_a, at: [0, 0, 0] }] }
   person_b: { place: [{ prefab: person_b, at: [0, 0, 0] }] }
@@ -144,6 +157,12 @@ structures:
   tree: { place: [{ prefab: tree, at: [0, 0, 0] }] }
   crop: { place: [{ prefab: crop, at: [0, 0, 0] }] }
   cart: { place: [{ prefab: cart, at: [0, 0, 0] }] }
+  casa_terra_l1: { place: [{ prefab: casa_terra_l1, at: [0, 0, 0] }] }
+  casa_terra_l2: { place: [{ prefab: casa_terra_l2, at: [0, 0, 0] }] }
+  casa_terra_l3: { place: [{ prefab: casa_terra_l3, at: [0, 0, 0] }] }
+  casa_nord_l1: { place: [{ prefab: casa_nord_l1, at: [0, 0, 0] }] }
+  casa_nord_l2: { place: [{ prefab: casa_nord_l2, at: [0, 0, 0] }] }
+  casa_nord_l3: { place: [{ prefab: casa_nord_l3, at: [0, 0, 0] }] }
 ---
 
 ## Overview
@@ -178,6 +197,26 @@ coherentes con los conceptos:
 - `farm`: verde con techo de madera (campo cultivado).
 - `warehouse`: gris con techo de madera (galpon sobrio).
 - `market`: naranja con toldo (puesto vivo y llamativo).
+
+## Building Models
+`buildingModels` es el primer contenido real de modelos voxel con estilo: por kind, una lista
+de estilos residenciales, cada uno `{ name, perLevel }` con `perLevel` = 3 structures (una por
+nivel 1..3). El motor elige el estilo por lote y dibuja la structure del nivel construido. Los
+modelos son casas legibles a escala chica: paredes llenas (`fill`) con overrides `cells` para
+techo, ventanas GLASS y puerta; la altura CRECE con el nivel para que el progreso se lea.
+
+Dos estilos residenciales, armonicos con los `buildingVariants` (calido/terracota) y la paleta
+pastel del pueblo:
+
+- `terracota`: paredes terracota (`WALL_TERRA`), techo marron (`ROOF_BROWN`), puerta de madera
+  (`TRUNK`) y ventanas `GLASS`. Niveles `casa_terra_l1..l3`, base 4x4 -> 5x5, alto 4 -> 6 -> 8.
+- `nordica`: paredes claras (`WALL_WHITE`), techo pizarra oscuro (`ROOF_SLATE`), marco de puerta
+  de madera clara (`WOOD_NORD`) y ventanas `GLASS`. Niveles `casa_nord_l1..l3`, base 4x4 -> 5x5,
+  alto 5 -> 7 -> 9.
+
+Las paletas de ambos estilos son distinguibles (terracota vs blanco/pizarra). Cada modelo tiene
+>= 12 voxeles y >= 3 materiales (pared, techo, ventana y puerta). Las structures homonimas
+(`casa_*`) colocan cada prefab 1:1 en `[0, 0, 0]`, igual que el resto del arte voxel.
 
 ## Stages
 `stages` describe las tres etapas de construccion de un edificio, cada una con `durationSec`
