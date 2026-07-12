@@ -8,6 +8,10 @@ import { createAgents, syncAgents, tickAgents, whoIsAt, residentInfo, carsInTran
 import { createEconomy, tickEconomy, cartsInTransit } from './economy.mjs';
 import { paletteAt, buildingVisual, moverVisual, cameraFrame } from './render-core.mjs';
 import { dragToAnchors } from './input-core.mjs';
+import { serializeState, restoreState } from './save-core.mjs';
+
+// Clave del autosave en localStorage (persistencia del pueblo entre sesiones).
+const SAVE_KEY = 'minitown-save-v1';
 
 // --------------------------------------------------------------------------
 // Utilidades de color / materiales reutilizables.
@@ -73,13 +77,26 @@ export function start(opts = {}) {
   if (!GAME || !Adapter) throw new Error('Falta window.GAME o window.ThreeVoxelAdapter');
   const container = opts.container || document.getElementById('app');
 
-  // ---- Mundo (sim) ---------------------------------------------------------
-  const town = createTown({ w: 36, h: 24, game: GAME });
-  tick(town, 42.5); // arranque ~08:30 (timeOfDay ~ 0.354)
-  const ag = createAgents({ seed: 20260711 });
-  syncAgents(ag, town, GAME);
+  // ---- Mundo (sim): continuar el pueblo guardado o arrancar limpio ---------
+  // JSON.parse + restoreState en try/catch: un save corrupto o modo privado no
+  // puede romper el arranque; si no hay save valido, se crea un pueblo nuevo.
+  let restored = null;
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (raw) restored = restoreState(JSON.parse(raw), GAME);
+  } catch (_e) { restored = null; }
+
+  let town, ag, eco;
+  if (restored) {
+    town = restored.town; ag = restored.ag; eco = restored.eco;
+  } else {
+    town = createTown({ w: 36, h: 24, game: GAME });
+    tick(town, 42.5); // arranque ~08:30 (timeOfDay ~ 0.354)
+    ag = createAgents({ seed: 20260711 });
+    syncAgents(ag, town, GAME);
+    eco = createEconomy();
+  }
   const ECON = GAME.ECON;
-  const eco = createEconomy();
 
   // ---- Escena / renderer ---------------------------------------------------
   const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
@@ -683,10 +700,37 @@ export function start(opts = {}) {
     renderer.render(scene, camera);
   }
 
+  // ---- Persistencia: autosave en localStorage (todo en try/catch) ----------
+  // Guardar nunca puede tirar el juego: cuota/modo privado se tragan silenciosos.
+  function save() {
+    try {
+      localStorage.setItem(SAVE_KEY, JSON.stringify(serializeState({ town, ag, eco })));
+      return true;
+    } catch (_e) { return false; }
+  }
+  function clearSave() {
+    try { localStorage.removeItem(SAVE_KEY); } catch (_e) { /* noop */ }
+  }
+  // Autosave periodico (~10 s) con aviso breve; ademas al ocultar/cerrar la pestana.
+  setInterval(() => { if (save()) showNotice(GAME.TEXTS.saved); }, 10000);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') save();
+  });
+  window.addEventListener('beforeunload', () => { save(); });
+
+  // Boton "Nueva partida": confirm nativo -> borra el save y reinicia limpio.
+  const newGameBtn = opts.newGameBtn || document.getElementById('newGame');
+  if (newGameBtn) {
+    newGameBtn.textContent = GAME.TEXTS.newGame;
+    newGameBtn.addEventListener('click', () => {
+      if (window.confirm(GAME.TEXTS.newGame + '?')) { clearSave(); location.reload(); }
+    });
+  }
+
   const MT = {
     town, ag, eco, game: GAME, renderer, scene, camera, renderOnce,
     placeAt: (kind, anchors) => placeBlock(town, kind, anchors),
-    setMode,
+    setMode, save, clearSave,
   };
   window.MT = MT;
   return MT;

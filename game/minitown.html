@@ -35,6 +35,13 @@
   }
   #modes button:hover { background: rgba(255,255,255,0.2); }
   #modes button.active { background: var(--btn-bg-active); color: var(--btn-fg-active); border-color: transparent; font-weight: 600; }
+  #actions { margin-top: 10px; }
+  #actions button {
+    font: inherit; font-size: 12px; cursor: pointer; color: var(--panel-fg);
+    background: var(--btn-bg); border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 9px; padding: 6px 10px; transition: background .15s;
+  }
+  #actions button:hover { background: rgba(255,255,255,0.2); }
 
   #hud {
     position: fixed; bottom: 12px; left: 12px; z-index: 10;
@@ -86,6 +93,9 @@
     <button data-mode="warehouse">Almacen (5)</button>
     <button data-mode="market">Mercado (6)</button>
   </div>
+  <div id="actions">
+    <button id="newGame" type="button">Nueva partida</button>
+  </div>
 </div>
 
 <div id="hud"></div>
@@ -112,6 +122,7 @@ start({
   hud: document.getElementById('hud'),
   panel: document.getElementById('inspect'),
   notice: document.getElementById('notice'),
+  newGameBtn: document.getElementById('newGame'),
 });
 </script>
 </body>

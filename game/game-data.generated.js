@@ -1896,7 +1896,9 @@ window.GAME = {
     "market": "Mercado",
     "money": "Dinero",
     "stock": "Stock",
-    "noFunds": "Sin fondos"
+    "noFunds": "Sin fondos",
+    "saved": "Guardado",
+    "newGame": "Nueva partida"
   },
   "NAMES": [
     "Ana",

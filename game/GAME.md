@@ -63,6 +63,8 @@ texts:
   money: Dinero
   stock: Stock
   noFunds: Sin fondos
+  saved: Guardado
+  newGame: Nueva partida
 names: [Ana, Beto, Carla, Diego, Elena, Fabio, Gina, Hugo, Iris, Juan, Kevin, Lucia, Marco, Nadia, Omar, Paula, Quique, Rosa, Sergio, Tania, Ulises, Vera, Willy, Ximena, Yago, Zoe]
 materials:
   SKIN: { color: [240, 200, 170] }
@@ -192,7 +194,8 @@ coherentes con los conceptos:
 ## Texts
 `texts` son las etiquetas de UI en espanol (ASCII, sin acentos): `home`, `shop`,
 `workspace`, `residents`, `workers`, `shoppers`, `underConstruction`, `vacant`, y las de
-economia (v2) `farm`, `warehouse`, `market`, `money`, `stock`, `noFunds`.
+economia (v2) `farm`, `warehouse`, `market`, `money`, `stock`, `noFunds`, y las de
+guardado `saved`, `newGame`.
 
 ## Names
 `names` es una lista de >= 20 nombres propios unicos para bautizar a los residentes.
