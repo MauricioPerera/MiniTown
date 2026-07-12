@@ -47,6 +47,8 @@ node game/tools/game-export.js game/GAME.md game/game-data.generated.js   # rege
 
 Cambiar el balance del juego (¿días más largos? ¿más residentes por casa? ¿otra paleta?) es editar YAML, no tocar código.
 
+Los datos están **sellados** (`dataSha256` en el frontmatter, game-protocol ≥ v2.19): el lint detecta cualquier edición no re-sellada. Tras un cambio legítimo: `node game/tools/game-seal.js game/GAME.md` y actualizar el token.
+
 ## Estructura
 
 | Ruta | Qué es |

@@ -108,3 +108,7 @@ datos rotos, y no-drift del generado. `node --test tests/game/test_minitown_data
 - PARAR y reportar si un test congelado parece incorrecto, si el YAML subset no alcanza
   para expresar una coleccion, o si cumplir algo exige tocar fuera de touch_only.
 - Node puro, sin npm install.
+- El GAME.md esta SELLADO (`dataSha256` en el frontmatter; game-protocol >= v2.19).
+  Cualquier cambio de datos exige re-sellar: `node game/tools/game-seal.js game/GAME.md`
+  y actualizar el token — lo hace el PM, igual que con tests_sha256. Un lint con error
+  `data-seal` significa datos editados sin re-sellar: hallazgo, no arreglo silencioso.

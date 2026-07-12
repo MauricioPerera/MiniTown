@@ -2,6 +2,7 @@
 version: '0.1'
 name: MiniTown
 profile: minitown
+dataSha256: '0e77c48abdd0448aee6269a11082e66a55c8bef59a6ec0565e834e26821f9c7d'
 buildingKinds:
   residential: { capacityPerLevel: [2, 4, 6], heightPerLevel: [2, 4, 6] }
   shop: { capacityPerLevel: [3, 5, 8], heightPerLevel: [2, 3, 5] }
