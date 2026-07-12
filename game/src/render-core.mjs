@@ -69,6 +69,9 @@ export function moverVisual(game, type, id) {
   return keys[idx];
 }
 
+// Stub Capa 0 (contrato minitown-render-voxel-buildings): implementacion pendiente.
+export function voxelBuildingScale(bounds, w, d, height) { return null; }
+
 export function cameraFrame(town) {
   const target = [town.w / 2, 0, town.h / 2];
   const maxSide = Math.max(town.w, town.h);
