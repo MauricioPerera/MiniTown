@@ -2029,5 +2029,6 @@ window.GAME = {
     "baseImmigrationPerDay": 6,
     "leaveBelow": 0.25,
     "emigrationPerDay": 4
-  }
+  },
+  "BUILDING_MODELS": {}
 };
